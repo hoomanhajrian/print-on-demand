@@ -7,17 +7,98 @@ generator client {
   provider = "prisma-client-js"
 }
 
-// Define your models here
-model User {
-  id       Int      @id @default(autoincrement())
-  email    String   @unique
-  name     String?
-  role     Role     @default(CLIENT)
-}
 
 enum Role {
   ADMIN
   EDITOR
   CLIENT
   PRINTER
+}
+
+
+model User {
+  id        String   @id @default(cuid()) // Use cuid() for UUIDs
+  role     Role     @default(CLIENT)
+  email     String   @unique
+  password_hash String? // Only for email/password users
+  google_id   String? @unique
+  first_name  String @default("John")
+  last_name   String  @default("Doe")
+  profile_picture String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt @default(now())
+
+  printer_profile PrinterProfile? // One-to-one relationship
+  print_requests  PrintRequest[]  // One-to-many relationship
+  reviews         Review[]        // One-to-many relationship
+  orders_as_printer Order[]        // Orders where the user is the printer
+}
+
+model PrinterProfile {
+  user      User     @relation(fields: [user_id], references: [id])
+  user_id   String   @id @unique // One-to-one, user_id is also the PK and FK
+  bio       String?
+  location  String
+  technologies String[]
+  materials   String[]
+  hourly_rate Float?
+  portfolio   String[]
+}
+
+model PrintRequest {
+  id        String   @id @default(cuid())
+  client    User     @relation(fields: [client_id], references: [id])
+  client_id String
+  model_url String // URL to Google Cloud Storage
+  material  String
+  quantity  Int
+  size      String
+  details   String?
+  created_at DateTime @default(now())
+  order     Order?    // One-to-one relationship
+}
+
+model Order {
+  id            String   @id @default(cuid())
+  request       PrintRequest @relation(fields: [request_id], references: [id])
+  request_id    String   @unique // One-to-one
+  printer       User     @relation(fields: [printer_id], references: [id])
+  printer_id    String
+  status        String   // 'pending', 'accepted', etc. - Use enum in your application logic
+  price         Float
+  payment_status String   // 'pending', 'paid', 'refunded' - Use enum in your application logic
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+  review        Review? // One-to-one with Review
+
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  price       Float
+  imageUrl    String?
+  category    String? // e.g., "T-shirts", "Mugs", "Posters"
+  tags        String[] // Keywords for search and filtering
+  availableMaterials String[] // Materials suitable for this product (e.g., PLA, ABS, Cotton)
+  availableSizes String[]   // Sizes available (e.g., S, M, L, XL)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relationships (optional, depending on your needs)
+  // You might want to relate products to specific printers or designs
+  // printer   PrinterProfile? @relation(fields: [printerId], references: [id])
+  // printerId String?
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  order     Order    @relation(fields: [order_id], references: [id])
+  order_id  String   @unique // One-to-one
+  client    User     @relation(fields: [client_id], references: [id])
+  client_id String
+  rating    Int
+  comment   String?
+  created_at DateTime @default(now())
 }
