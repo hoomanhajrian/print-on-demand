@@ -4,7 +4,7 @@ import { UUID } from "node:crypto";
 
 export interface User {
   id: UUID; // UUID
-  user_type: Role;
+  role: Role;
   email: string;
   password_hash?: string; // Only for email/password users
   google_id?: string;
@@ -15,7 +15,7 @@ export interface User {
   updated_at: Date;
 }
 //user roles 
-enum Role {
+export enum Role {
   ADMIN = 'ADMIN',
   EDITOR = 'EDITOR',
   CLIENT = 'CLIENT',
@@ -95,4 +95,11 @@ export interface ReviewWithClient extends Review {
 //home page props type
 export interface HomeProps {
   users: User[]
+}
+
+// api response type
+export interface ApiResponse<T> {
+  data: T | null;
+  loading: boolean;
+  error: string | null;
 }
