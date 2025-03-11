@@ -5,8 +5,9 @@ datasource db {
 
 generator client {
   provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client"
+  previewFeatures = ["jsonProtocol"]
 }
-
 
 enum Role {
   ADMIN
@@ -15,18 +16,17 @@ enum Role {
   PRINTER
 }
 
-
 model User {
-  id        String   @id @default(cuid()) // Use cuid() for UUIDs
-  role     Role     @default(CLIENT)
-  email     String   @unique
-  password_hash String? // Only for email/password users
-  google_id   String? @unique
-  first_name  String @default("John")
-  last_name   String  @default("Doe")
-  profile_picture String?
-  created_at  DateTime @default(now())
-  updated_at  DateTime @updatedAt @default(now())
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  role          Role      @default(CLIENT)
+  first_name    String?
+  last_name     String?
+  password_hash String?
+  active        Boolean   @default(true) // Added active column
 
   printer_profile PrinterProfile? // One-to-one relationship
   print_requests  PrintRequest[]  // One-to-many relationship
