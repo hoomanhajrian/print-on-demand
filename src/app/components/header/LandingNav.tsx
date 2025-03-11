@@ -5,32 +5,11 @@ import { useState, useEffect } from 'react';
 import LoginCard from '@/app/components/auth/LoginCard';
 import { useSession, signOut } from 'next-auth/react';
 import { Session } from 'next-auth';
-import { useRouter, usePathname } from 'next/navigation';
 import { Role } from '@/app/types';
 
 export default function LandingNav() {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const { data: session } = useSession() as { data: (Session & { user: { role: Role } }) | null };
-  const router = useRouter();
-  const pathname = usePathname();
-
-  useEffect(() => {
-    // Check if the user is authenticated and authorized on route change
-    const checkAuth = () => {
-      const isAdminRoute = pathname?.startsWith('/admin');
-      const isUserRoute = pathname === '/main';
-
-      if (isAdminRoute) {
-        if (!session?.user || (session?.user.role !== Role.ADMIN && session?.user.role !== Role.EDITOR)) {
-          router.push('/auth/signin');
-        }
-      } else if (isUserRoute && !session?.user) {
-        router.push('/auth/signin');
-      }
-    };
-
-    checkAuth();
-  }, [session, pathname, router]);
 
   const openLoginModal = () => {
     setIsLoginModalOpen(true);
@@ -65,30 +44,20 @@ export default function LandingNav() {
           <div className="absolute right-0 z-10 mt-2 w-56 origin-top-right rounded-md bg-white ring-1 shadow-lg ring-black/5 focus:outline-hidden" role="menu" aria-orientation="vertical" aria-labelledby="menu-button">
             <div className="py-1" role="none">
               <div>
-              <Link href="/admin" className="block px-4 py-2 text-sm text-gray-700">
-                      Admin
-                    </Link>
-                    <Link href="/admin" className="block px-4 py-2 text-sm text-gray-700">
-                      Main
-                    </Link>
+                <Link href="/admin" className="block px-4 py-2 text-sm text-gray-700">
+                  Admin
+                </Link>
+                <Link href="/main" className="block px-4 py-2 text-sm text-gray-700">
+                  Main
+                </Link>
               </div>
               {session?.user ? (
-                <>
-                  {(session?.user.role === Role.ADMIN || session?.user.role === Role.EDITOR) && (
-                    <Link href="/admin" className="block px-4 py-2 text-sm text-gray-700">
-                      Admin
-                    </Link>
-                  )}
-                  <Link href="/main" className="block px-4 py-2 text-sm text-gray-700">
-                    User
-                  </Link>
-                  <button
-                    onClick={() => signOut({ callbackUrl: '/' })}
-                    className="block px-4 py-2 text-sm text-gray-700"
-                  >
-                    Sign Out
-                  </button>
-                </>
+                <button
+                  onClick={() => signOut({ callbackUrl: '/' })}
+                  className="block px-4 py-2 text-sm text-gray-700"
+                >
+                  Sign Out
+                </button>
               ) : (
                 <button
                   onClick={openLoginModal}
