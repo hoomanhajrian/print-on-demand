@@ -57,7 +57,7 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ onClose }) => {
         },
         body: JSON.stringify(userData),
       });
-  
+      
       if (!response.ok) {
         const errorData = await response.json();
         setError(errorData.message || 'An unexpected error occurred');
