@@ -32,13 +32,14 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    const { email, first_name, last_name, role } = await req.json();
+    const { email, firstName : first_name , lastName : last_name, password :password_hash , role } = await req.json();
 
     const newUser = await prisma.user.create({
       data: {
         email,
         first_name,
         last_name,
+        password_hash,
         role,
       },
     });
@@ -58,7 +59,7 @@ export async function PUT(req: Request) {
       return NextResponse.json({ error: 'User ID is required for update' }, { status: 400 });
     }
 
-    const { email, first_name, last_name, role } = await req.json();
+    const { email, password:password_hash, role } = await req.json();
 
     const updatedUser = await prisma.user.update({
       where: {
@@ -66,9 +67,8 @@ export async function PUT(req: Request) {
       },
       data: {
         email,
-        first_name,
-        last_name,
         role,
+        password_hash,
       },
     });
     return NextResponse.json(updatedUser, { status: 200 });

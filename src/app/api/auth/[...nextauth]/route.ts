@@ -1,6 +1,6 @@
-import NextAuth, { NextAuthOptions, Session } from "next-auth";
+import NextAuth, { NextAuthOptions, User as NextAuthUser } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, $Enums } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
@@ -9,11 +9,15 @@ declare module "next-auth" {
   interface Session {
     user: {
       id: string;
-      name: string;
+      name?: string | null;
       email: string;
-      role: string;
+      role: $Enums.Role;
     };
   }
+}
+
+interface User extends NextAuthUser {
+  role: $Enums.Role;
 }
 
 export const authOptions: NextAuthOptions = {
@@ -26,68 +30,80 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
+          console.log("Missing credentials");
           return null;
         }
 
-        const user = await prisma.user.findUnique({
-          where: {
-            email: credentials.email,
-          },
-        });
+        try {
+          const user = await prisma.user.findUnique({
+            where: {
+              email: credentials.email,
+            },
+          });
 
-        if (!user?.password_hash) {
+          if (!user) {
+            console.error("User not found:", credentials.email);
+            return null;
+          }
+
+          if (!user.password_hash) {
+            console.error("No password hash found for user:", user.email);
+            return null;
+          }
+
+          const isPasswordValid = await bcrypt.compare(
+            credentials.password,
+            user.password_hash
+          );
+
+          if (!isPasswordValid) {
+            console.error("Invalid password for user:", user.email);
+            return null;
+          }
+
+          return {
+            id: user.id,
+            name: user.first_name,
+            email: user.email,
+            role: user.role,
+          };
+        } catch (error) {
+          console.error("Error in authorize callback:", error);
           return null;
         }
-
-        const isPasswordValid = await bcrypt.compare(
-          credentials.password,
-          user.password_hash
-        );
-
-        if (!isPasswordValid) {
-          return null;
-        }
-
-        // Any object returned will be saved in `user` property of the JWT
-        return {
-          id: user.id,
-          name: user.first_name,
-          email: user.email,
-          role: user.role,
-        };
       },
     }),
   ],
   session: {
-    strategy: "database",
-    maxAge: 30 * 24 * 60 * 60, // 30 days
-    updateAge: 24 * 60 * 60, // 24 hours
+    strategy: "jwt",
+  },
+  jwt: {
+    secret: process.env.NEXTAUTH_SECRET,
   },
   secret: process.env.NEXTAUTH_SECRET,
   callbacks: {
-    async session({ session, user }) {
-      const dbUser = await prisma.user.findUnique({
-        where: {
-          email: user.email,
-        },
-      });
-
-      if (!dbUser) {
-        throw new Error("User not found in database");
+    async session({ session, token }) {
+      if (token && token.id && token.name && token.email && token.role) {
+        session.user = {
+          id: token.id as string,
+          name: token.name as string,
+          email: token.email as string,
+          role: token.role as $Enums.Role,
+        };
       }
-
-      session.user = {
-        id: dbUser.id,
-        name: dbUser.first_name,
-        email: dbUser.email,
-        role: dbUser.role,
-      };
-
       return session;
+    },
+    async jwt({ token, user }) {
+      if (user) {
+        token.id = user.id;
+        token.email = user.email;
+        token.role = (user as User).role;
+      }
+      return token;
     },
   },
   pages: {
-    signIn: "/", // Specify custom sign-in page
+    signIn: "/",
   },
 };
 
