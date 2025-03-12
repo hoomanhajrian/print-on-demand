@@ -1,28 +1,32 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from "react";
 
 export default function AdminDashboard() {
   const [metrics, setMetrics] = useState({
     totalUsers: 0,
     totalOrders: 0,
+    totalGigs: 0,
   });
 
   useEffect(() => {
     // Fetch data from your API endpoints
     const fetchMetrics = async () => {
       try {
-        const usersResponse = await fetch('/api/users');
+        const usersResponse = await fetch("/api/users");
         const usersData = await usersResponse.json();
-        const ordersResponse = await fetch('/api/orders');
+        const ordersResponse = await fetch("/api/orders");
         const ordersData = await ordersResponse.json();
+        const gigsResponse = await fetch("/api/gigs");
+        const gigsData = await gigsResponse.json();
 
         setMetrics({
           totalUsers: usersData.length,
           totalOrders: ordersData.length,
+          totalGigs: gigsData.length,
         });
       } catch (error) {
-        console.error('Error fetching metrics:', error);
+        console.error("Error fetching metrics:", error);
       }
     };
 
@@ -40,6 +44,10 @@ export default function AdminDashboard() {
         <div className="bg-white shadow-md rounded-md p-4">
           <h2 className="text-lg font-semibold">Total Orders</h2>
           <p className="text-3xl">{metrics.totalOrders}</p>
+        </div>
+        <div className="bg-white shadow-md rounded-md p-4">
+          <h2 className="text-lg font-semibold">Total Gigs</h2>
+          <p className="text-3xl">{metrics.totalGigs}</p>
         </div>
       </div>
     </div>
