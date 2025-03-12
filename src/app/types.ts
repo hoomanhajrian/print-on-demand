@@ -1,7 +1,13 @@
 import { UUID } from "node:crypto";
 
-// types.ts
+// User roles
+export enum Role {
+  ADMIN = 'ADMIN',
+  EDITOR = 'EDITOR',
+  USER = 'USER',
+}
 
+// User interface
 export interface User {
   id: UUID; // UUID
   role: Role;
@@ -10,81 +16,79 @@ export interface User {
   google_id?: string;
   first_name: string;
   last_name: string;
+  age: number;
   profile_picture?: string;
   created_at: Date;
   updated_at: Date;
-}
-//user roles 
-export enum Role {
-  ADMIN = 'ADMIN',
-  EDITOR = 'EDITOR',
-  CLIENT = 'CLIENT',
-  PRINTER = 'PRINTER',
+  is_active: boolean;
+  active_at: Date;
+  is_verified: boolean;
 }
 
-export interface PrinterProfile extends User { // PrinterProfile extends User
-  bio?: string;
-  location: string;
-  technologies: string[];
-  materials: string[];
-  hourly_rate?: number;
-  portfolio?: string[];
+// Printer interface
+export interface Printer {
+  id: UUID; // UUID
+  brand: string;
+  model: string;
+  max_dimentions: { length: number; width: number; height: number };
+  user_id: UUID; // UUID, Foreign Key
+  gigs: Gig[];
+  orders: Order[];
+  materialCharges: MaterialCharge[];
 }
 
-export interface PrintRequest {
-  id: string; // UUID
-  client_id: string; // UUID, Foreign Key
-  model_url: string; // URL to Google Cloud Storage
-  material: string;
-  quantity: number;
-  size: string;
-  details?: string;
-  created_at: Date;
+// Gig interface
+export interface Gig {
+  id: UUID; // UUID
+  title: string;
+  description?: string;
+  duration: number;
+  price: number;
+  imageUrl?: string;
+  category?: string;
+  tags: string[];
+  active: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  printers: Printer[];
+  user_id: UUID; // UUID, Foreign Key
 }
 
+// Order interface
 export interface Order {
-  id: string; // UUID
-  request_id: string; // UUID, Foreign Key
-  printer_id: string; // UUID, Foreign Key
+  id: UUID; // UUID
+  client_id: UUID; // UUID, Foreign Key
+  printer_id: UUID; // UUID, Foreign Key
   status: 'pending' | 'accepted' | 'in_progress' | 'completed' | 'cancelled';
   price: number;
+  address: string;
   payment_status: 'pending' | 'paid' | 'refunded';
   created_at: Date;
   updated_at: Date;
+  review?: Review;
 }
 
-export interface Product {
-  id: string;
-  name: string;
-  description: string | null;
-  price: number;
-  imageUrl: string | null;
-  category: string | null;
-  tags: string[];
-  availableMaterials: string[];
-  availableSizes: string[];
-  createdAt: Date;
-  updatedAt: Date;
+// MaterialCharge interface
+export interface MaterialCharge {
+  id: UUID; // UUID
+  material: string;
+  chargePerHour: number;
+  printer_id: UUID; // UUID, Foreign Key
 }
 
+// Review interface
 export interface Review {
-  id: string; // UUID
-  order_id: string; // UUID, Foreign Key
-  client_id: string; // UUID, Foreign Key
+  id: UUID; // UUID
+  order_id: UUID; // UUID, Foreign Key
+  from_id: UUID; // UUID, Foreign Key
+  to_id: UUID; // UUID, Foreign Key
   rating: number;
   comment?: string;
   created_at: Date;
 }
 
-
 // Example of a combined type for data fetching (if needed)
-
-export interface PrintRequestWithUser extends PrintRequest {
-  client: User; // Include the client's user details
-}
-
 export interface OrderWithDetails extends Order {
-  request: PrintRequest;
   printer: User; // Include the printer's user details
 }
 
@@ -92,12 +96,12 @@ export interface ReviewWithClient extends Review {
   client: User;
 }
 
-//home page props type
+// Home page props type
 export interface HomeProps {
-  users: User[]
+  users: User[];
 }
 
-// api response type
+// API response type
 export interface ApiResponse<T> {
   data: T | null;
   loading: boolean;
