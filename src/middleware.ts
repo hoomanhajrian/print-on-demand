@@ -9,7 +9,7 @@ const secret = process.env.NEXTAUTH_SECRET;
 // Define your roles and protected routes
 const protectedRoutes: { [key: string]: string[] } = {
   '/admin': ['ADMIN', 'EDITOR'],
-  '/main': ['PRINTER', 'CLIENT', 'ADMIN'],
+  '/main': ['USER', 'ADMIN'],
   // example, adjust to your needs
 };
 
