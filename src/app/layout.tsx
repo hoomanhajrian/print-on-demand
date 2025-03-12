@@ -1,22 +1,21 @@
-"use client";
+import { Roboto } from "next/font/google";
+import Providers from "@/app/providers/SessionProvider";
+import "./globals.css";
+import { Alert } from "./components/notification/Alert";
 
-import { Roboto } from 'next/font/google';
-import Providers from '@/app/providers/SessionProvider'; // Import Providers
-
-import './globals.css';
-
-const roboto = Roboto({ subsets: ['latin'], variable: '--font-roboto' });
+const roboto = Roboto({ subsets: ["latin"], variable: "--font-roboto" });
 
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
   return (
     <Providers>
       <html lang="en">
         <body className={roboto.variable}>
-            {children}
+          {children}
+          <Alert status={"success"} message="This is an alert message" />
         </body>
       </html>
     </Providers>
