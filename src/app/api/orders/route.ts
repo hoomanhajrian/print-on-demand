@@ -2,22 +2,20 @@ import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
+
 export async function GET(req: Request) {
   try {
     const url = new URL(req.url);
-    const id = url.searchParams.get('id');
+    const userId = url.searchParams.get('user_id');
 
-    if (id) {
-      // GET a single order by ID
-      const order = await prisma.order.findUnique({
+    if (userId) {
+      // GET all orders for a specific user
+      const orders = await prisma.order.findMany({
         where: {
-          id: id,
+          client_id: userId,
         },
       });
-      if (!order) {
-        return NextResponse.json({ error: 'Order not found' }, { status: 404 });
-      }
-      return NextResponse.json(order, { status: 200 });
+      return NextResponse.json(orders, { status: 200 });
     } else {
       // GET all orders
       const orders = await prisma.order.findMany();
@@ -31,12 +29,11 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    const { request_id, printer_id, status, price, payment_status } = await req.json();
+    const { client_id, status, price, payment_status } = await req.json();
 
     const newOrder = await prisma.order.create({
       data: {
-        request_id,
-        printer_id,
+        client_id,
         status,
         price,
         payment_status,
@@ -58,15 +55,14 @@ export async function PUT(req: Request) {
       return NextResponse.json({ error: 'Order ID is required for update' }, { status: 400 });
     }
 
-    const { request_id, printer_id, status, price, payment_status } = await req.json();
+    const { client_id, status, price, payment_status } = await req.json();
 
     const updatedOrder = await prisma.order.update({
       where: {
         id: id,
       },
       data: {
-        request_id,
-        printer_id,
+        client_id,
         status,
         price,
         payment_status,
