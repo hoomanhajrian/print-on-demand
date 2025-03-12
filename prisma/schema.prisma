@@ -4,16 +4,15 @@ datasource db {
 }
 
 generator client {
-  provider = "prisma-client-js"
-  output   = "../node_modules/.prisma/client"
+  provider        = "prisma-client-js"
+  output          = "../node_modules/.prisma/client"
   previewFeatures = ["jsonProtocol"]
 }
 
 enum Role {
   ADMIN
   EDITOR
-  CLIENT
-  PRINTER
+  USER
 }
 
 model User {
@@ -21,84 +20,87 @@ model User {
   name          String?
   email         String?   @unique
   emailVerified DateTime?
+  phone         String?   @default("")
   image         String?
-  role          Role      @default(CLIENT)
+  role          Role      @default(USER)
   first_name    String?
   last_name     String?
+  age           Int?
   password_hash String?
-  active        Boolean   @default(true) // Added active column
+  active        Boolean   @default(true)
+  active_at     DateTime  @default(now())
+  created_at    DateTime  @default(now())
+  updated_at    DateTime  @default(now())
 
-  printer_profile PrinterProfile? // One-to-one relationship
-  print_requests  PrintRequest[]  // One-to-many relationship
-  reviews         Review[]        // One-to-many relationship
-  orders_as_printer Order[]        // Orders where the user is the printer
-}
-
-model PrinterProfile {
-  user      User     @relation(fields: [user_id], references: [id])
-  user_id   String   @id @unique // One-to-one, user_id is also the PK and FK
-  bio       String?
-  location  String
-  technologies String[]
-  materials   String[]
-  hourly_rate Float?
-  portfolio   String[]
-}
-
-model PrintRequest {
-  id        String   @id @default(cuid())
-  client    User     @relation(fields: [client_id], references: [id])
-  client_id String
-  model_url String // URL to Google Cloud Storage
-  material  String
-  quantity  Int
-  size      String
-  details   String?
-  created_at DateTime @default(now())
-  order     Order?    // One-to-one relationship
+  reviewsFrom Review[]  @relation("ReviewsFrom")
+  reviewsTo   Review[]  @relation("ReviewsTo")
+  orders      Order[]
+  printers    Printer[]
+  gigs        Gig[]
 }
 
 model Order {
-  id            String   @id @default(cuid())
-  request       PrintRequest @relation(fields: [request_id], references: [id])
-  request_id    String   @unique // One-to-one
-  printer       User     @relation(fields: [printer_id], references: [id])
-  printer_id    String
-  status        String   // 'pending', 'accepted', etc. - Use enum in your application logic
-  price         Float
-  payment_status String   // 'pending', 'paid', 'refunded' - Use enum in your application logic
-  created_at    DateTime @default(now())
-  updated_at    DateTime @updatedAt
-  review        Review? // One-to-one with Review
-
+  id             String   @id @default(cuid())
+  client         User     @relation(fields: [client_id], references: [id])
+  client_id      String
+  printer        Printer  @relation(fields: [printer_id], references: [id])
+  printer_id     String
+  status         String // 'pending', 'accepted', etc. - Use enum in your application logic
+  price          Float
+  address        String   @default("")
+  payment_status String // 'pending', 'paid', 'refunded' - Use enum in your application logic
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+  review         Review? // One-to-one with Review
 }
 
-model Product {
+model Gig {
   id          String   @id @default(cuid())
-  name        String
+  title       String
   description String?
+  duration    Int
   price       Float
   imageUrl    String?
-  category    String? // e.g., "T-shirts", "Mugs", "Posters"
+  category    String?
   tags        String[] // Keywords for search and filtering
-  availableMaterials String[] // Materials suitable for this product (e.g., PLA, ABS, Cotton)
-  availableSizes String[]   // Sizes available (e.g., S, M, L, XL)
+  active      Boolean  @default(false)
   createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  updatedAt   DateTime @default(now())
 
-  // Relationships (optional, depending on your needs)
-  // You might want to relate products to specific printers or designs
-  // printer   PrinterProfile? @relation(fields: [printerId], references: [id])
-  // printerId String?
+  printers Printer[] @relation("GigPrinters")
+  user     User      @relation(fields: [user_id], references: [id])
+  user_id  String
+}
+
+model Printer {
+  id              String           @id @default(cuid())
+  brand           String           @default("")
+  model           String           @default("")
+  max_dimentions  Json
+  user            User             @relation(fields: [user_id], references: [id])
+  user_id         String
+  gigs            Gig[]            @relation("GigPrinters")
+  orders          Order[]
+  materialCharges MaterialCharge[]
+}
+
+model MaterialCharge {
+  id            String  @id @default(cuid())
+  material      String
+  chargePerHour Float
+  printer       Printer @relation(fields: [printer_id], references: [id])
+  printer_id    String
 }
 
 model Review {
-  id        String   @id @default(cuid())
-  order     Order    @relation(fields: [order_id], references: [id])
-  order_id  String   @unique // One-to-one
-  client    User     @relation(fields: [client_id], references: [id])
-  client_id String
-  rating    Int
-  comment   String?
+  id         String   @id @default(cuid())
+  order      Order    @relation(fields: [order_id], references: [id])
+  order_id   String   @unique
+  from       User     @relation("ReviewsFrom", fields: [from_id], references: [id])
+  from_id    String
+  to         User     @relation("ReviewsTo", fields: [to_id], references: [id])
+  to_id      String
+  rating     Int
+  comment    String?
   created_at DateTime @default(now())
 }
