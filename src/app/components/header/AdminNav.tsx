@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import Link from "next/link";
 
 export default function AdminNav() {
   return (
@@ -8,14 +8,14 @@ export default function AdminNav() {
           Print-on-Demand
         </Link>
         <div className="flex space-x-4">
-        <Link href="/admin" className="text-gray-300 hover:text-white">
+          <Link href="/admin" className="text-gray-300 hover:text-white">
             Dashboard
           </Link>
           <Link href="/admin/users" className="text-gray-300 hover:text-white">
             Users
           </Link>
-          <Link href="/admin/products" className="text-gray-300 hover:text-white">
-            Products
+          <Link href="/admin/gigs" className="text-gray-300 hover:text-white">
+            Gigs
           </Link>
           <Link href="/admin/orders" className="text-gray-300 hover:text-white">
             Orders
