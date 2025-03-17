@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from 'react';
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import bcrypt from 'bcryptjs';
+import bcrypt from "bcryptjs";
 
 const signUpFormSchema = z.object({
   firstName: z.string().min(2, "First name must be at least 2 characters"),
@@ -36,11 +36,11 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ onClose }) => {
   const onSubmit = async (data: z.infer<typeof signUpFormSchema>) => {
     setLoading(true);
     setError(null);
-  
+
     try {
       // Hash the password on the client-side
       const hashedPassword = await bcrypt.hash(data.password, 10);
-  
+
       // Create a new object with the hashed password
       const userData = {
         firstName: data.firstName,
@@ -49,26 +49,26 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ onClose }) => {
         password: hashedPassword,
         role: data.role,
       };
-  
-      const response = await fetch('/api/users', {
-        method: 'POST',
+
+      const response = await fetch("/api/users", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(userData),
       });
-      
+
       if (!response.ok) {
         const errorData = await response.json();
-        setError(errorData.message || 'An unexpected error occurred');
+        setError(errorData.message || "An unexpected error occurred");
         setLoading(false);
         return;
       }
-  
+
       setLoading(false);
       onClose(); // Close the modal after successful sign-up
     } catch (err: any) {
-      setError(err.message || 'An unexpected error occurred');
+      setError(err.message || "An unexpected error occurred");
       setLoading(false);
     }
   };
@@ -77,14 +77,22 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ onClose }) => {
     <div>
       <h2 className="text-2xl font-semibold mb-4">Sign Up</h2>
       {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+        <div
+          className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4"
+          role="alert"
+        >
           <strong className="font-bold">Error!</strong>
           <span className="block sm:inline">{error}</span>
         </div>
       )}
       <form onSubmit={handleSubmit(onSubmit)}>
         <div className="mb-4">
-          <label htmlFor="firstName" className="block text-gray-700 text-sm font-bold mb-2">First Name</label>
+          <label
+            htmlFor="firstName"
+            className="block text-gray-700 text-sm font-bold mb-2"
+          >
+            First Name
+          </label>
           <input
             type="text"
             id="firstName"
@@ -94,11 +102,18 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ onClose }) => {
             required
           />
           {errors.firstName && (
-            <p className="text-red-500 text-xs italic">{errors.firstName?.message}</p>
+            <p className="text-red-500 text-xs italic">
+              {errors.firstName?.message}
+            </p>
           )}
         </div>
         <div className="mb-4">
-          <label htmlFor="lastName" className="block text-gray-700 text-sm font-bold mb-2">Last Name</label>
+          <label
+            htmlFor="lastName"
+            className="block text-gray-700 text-sm font-bold mb-2"
+          >
+            Last Name
+          </label>
           <input
             type="text"
             id="lastName"
@@ -108,11 +123,18 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ onClose }) => {
             required
           />
           {errors.lastName && (
-            <p className="text-red-500 text-xs italic">{errors.lastName?.message}</p>
+            <p className="text-red-500 text-xs italic">
+              {errors.lastName?.message}
+            </p>
           )}
         </div>
         <div className="mb-4">
-          <label htmlFor="email" className="block text-gray-700 text-sm font-bold mb-2">Email</label>
+          <label
+            htmlFor="email"
+            className="block text-gray-700 text-sm font-bold mb-2"
+          >
+            Email
+          </label>
           <input
             type="email"
             id="email"
@@ -122,11 +144,18 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ onClose }) => {
             required
           />
           {errors.email && (
-            <p className="text-red-500 text-xs italic">{errors.email?.message}</p>
+            <p className="text-red-500 text-xs italic">
+              {errors.email?.message}
+            </p>
           )}
         </div>
         <div className="mb-6">
-          <label htmlFor="password" className="block text-gray-700 text-sm font-bold mb-2">Password</label>
+          <label
+            htmlFor="password"
+            className="block text-gray-700 text-sm font-bold mb-2"
+          >
+            Password
+          </label>
           <input
             type="password"
             id="password"
@@ -136,11 +165,18 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ onClose }) => {
             required
           />
           {errors.password && (
-            <p className="text-red-500 text-xs italic">{errors.password?.message}</p>
+            <p className="text-red-500 text-xs italic">
+              {errors.password?.message}
+            </p>
           )}
         </div>
         <div className="mb-6">
-          <label htmlFor="confirmPassword" className="block text-gray-700 text-sm font-bold mb-2">Confirm Password</label>
+          <label
+            htmlFor="confirmPassword"
+            className="block text-gray-700 text-sm font-bold mb-2"
+          >
+            Confirm Password
+          </label>
           <input
             type="password"
             id="confirmPassword"
@@ -150,11 +186,15 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ onClose }) => {
             required
           />
           {errors.confirmPassword && (
-            <p className="text-red-500 text-xs italic">{errors.confirmPassword?.message}</p>
+            <p className="text-red-500 text-xs italic">
+              {errors.confirmPassword?.message}
+            </p>
           )}
         </div>
         <div className="mb-6">
-          <label className="block text-gray-700 text-sm font-bold mb-2">Role</label>
+          <label className="block text-gray-700 text-sm font-bold mb-2">
+            Role
+          </label>
           <div className="flex items-center">
             <input
               type="radio"
@@ -163,7 +203,9 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ onClose }) => {
               value="CLIENT"
               {...register("role")}
             />
-            <label htmlFor="clientRole" className="text-gray-700 text-sm mr-4">Client</label>
+            <label htmlFor="clientRole" className="text-gray-700 text-sm mr-4">
+              Client
+            </label>
 
             <input
               type="radio"
@@ -172,10 +214,14 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ onClose }) => {
               value="PRINTER"
               {...register("role")}
             />
-            <label htmlFor="printerRole" className="text-gray-700 text-sm">Printer</label>
+            <label htmlFor="printerRole" className="text-gray-700 text-sm">
+              Printer
+            </label>
           </div>
           {errors.role && (
-            <p className="text-red-500 text-xs italic">{errors.role?.message}</p>
+            <p className="text-red-500 text-xs italic">
+              {errors.role?.message}
+            </p>
           )}
         </div>
         <div className="flex items-center justify-between">
@@ -184,7 +230,7 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ onClose }) => {
             type="submit"
             disabled={loading}
           >
-            {loading ? 'Signing up...' : 'Sign Up'}
+            {loading ? "Signing up..." : "Sign Up"}
           </button>
         </div>
       </form>

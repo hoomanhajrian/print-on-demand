@@ -1,6 +1,6 @@
-import NextAuth, { NextAuthOptions, User as NextAuthUser } from "next-auth";
+import NextAuth, { type NextAuthOptions } from "next-auth";
+import { PrismaClient, $Enums, User } from "@prisma/client";
 import CredentialsProvider from "next-auth/providers/credentials";
-import { PrismaClient, $Enums } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
@@ -15,25 +15,18 @@ declare module "next-auth" {
     };
   }
 }
-
-interface User extends NextAuthUser {
-  role: $Enums.Role;
-}
-
 export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
-      name: "credentials",
+      name: "Credentials",
       credentials: {
-        email: { label: "Email", type: "text" },
+        email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          console.log("Missing credentials");
-          return null;
+        if (!credentials) {
+          throw new Error("No credentials provided");
         }
-
         try {
           const user = await prisma.user.findUnique({
             where: {
@@ -42,13 +35,11 @@ export const authOptions: NextAuthOptions = {
           });
 
           if (!user) {
-            console.error("User not found:", credentials.email);
-            return null;
+            throw new Error("User not found.");
           }
 
           if (!user.password_hash) {
-            console.error("No password hash found for user:", user.email);
-            return null;
+            throw new Error("No password found.");
           }
 
           const isPasswordValid = await bcrypt.compare(
@@ -57,53 +48,52 @@ export const authOptions: NextAuthOptions = {
           );
 
           if (!isPasswordValid) {
-            console.error("Invalid password for user:", user.email);
-            return null;
+            throw new Error("Invalid user or password.");
           }
 
           return {
             id: user.id,
-            name: user.first_name,
+            name: user.name,
             email: user.email,
             role: user.role,
           };
         } catch (error) {
           console.error("Error in authorize callback:", error);
-          return null;
+          throw new Error("An unexpected error occurred.");
         }
       },
     }),
   ],
+
   session: {
     strategy: "jwt",
-  },
-  jwt: {
-    secret: process.env.NEXTAUTH_SECRET,
+    updateAge: 60 * 60 * 24, // 24 hours
+    maxAge: 60 * 60 * 24 * 3, // 3 days
+    // async encode() {},
+    // async decode() {},
   },
   secret: process.env.NEXTAUTH_SECRET,
   callbacks: {
-    async session({ session, token }) {
-      if (token && token.id && token.name && token.email && token.role) {
-        session.user = {
-          id: token.id as string,
-          name: token.name as string,
-          email: token.email as string,
-          role: token.role as $Enums.Role,
-        };
-      }
-      return session;
-    },
     async jwt({ token, user }) {
       if (user) {
-        token.id = user.id;
-        token.email = user.email;
-        token.role = (user as User).role;
+        return {
+          ...token,
+          id: user.id,
+          name: (user as User).first_name + " " + (user as User).last_name,
+          email: (user as User).email,
+          role: (user as User).role,
+        };
       }
+
       return token;
+    },
+    async session({ session, token }) {
+      return session;
     },
   },
   pages: {
     signIn: "/",
+    signOut: "/",
   },
 };
 
