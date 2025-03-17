@@ -12,6 +12,8 @@ export default function LandingNav() {
   const { data: session } = useSession() as {
     data: (Session & { user: { role: Role } }) | null;
   };
+  console.log("Session:", session);
+  console.log("Session user:", session?.user);
 
   const openLoginModal = () => {
     setIsLoginModalOpen(true);
