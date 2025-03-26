@@ -4,6 +4,7 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
+const secret = process.env.NEXTAUTH_SECRET;
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -62,7 +63,7 @@ export const authOptions: NextAuthOptions = {
     // async encode() {},
     // async decode() {},
   },
-  secret: process.env.NEXTAUTH_SECRET,
+  secret: secret,
   callbacks: {
     async jwt({ token, user, trigger, session }) {
       if (user) {

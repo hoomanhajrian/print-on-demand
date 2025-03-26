@@ -5,8 +5,9 @@ import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { UseSelector, useDispatch } from "react-redux";
+import { showAlert } from "@/app/features/alert/alertSlice";
 import * as z from "zod";
-import AlertComponent from "../notification/Alert";
 
 const signInFormSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -18,10 +19,10 @@ interface SignInFormProps {
 }
 
 const SignInForm: React.FC<SignInFormProps> = ({ onClose }) => {
-  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const { status } = useSession();
+  const dispatch = useDispatch();
 
   const {
     register,
@@ -33,7 +34,6 @@ const SignInForm: React.FC<SignInFormProps> = ({ onClose }) => {
 
   const onSubmit = async (data: z.infer<typeof signInFormSchema>) => {
     setLoading(true);
-    setError(null);
 
     const result = await signIn("credentials", {
       redirect: false,
@@ -41,10 +41,9 @@ const SignInForm: React.FC<SignInFormProps> = ({ onClose }) => {
       password: data.password,
     });
 
-    setLoading(false);
-
     if (result?.error) {
-      setError(result.error);
+      setLoading(false);
+      dispatch(showAlert({ message: result.error, status: "error" }));
     } else {
       router.push("/main");
       onClose();
@@ -53,6 +52,9 @@ const SignInForm: React.FC<SignInFormProps> = ({ onClose }) => {
 
   useEffect(() => {
     if (status === "authenticated") {
+      dispatch(
+        showAlert({ message: "Logged in successfully", status: "success" })
+      );
       router.push("/main");
       onClose();
     }
@@ -60,7 +62,6 @@ const SignInForm: React.FC<SignInFormProps> = ({ onClose }) => {
 
   return (
     <div>
-      {error && <AlertComponent status="error" message={error} />}
       <form onSubmit={handleSubmit(onSubmit)}>
         <div className="mb-4">
           <label
