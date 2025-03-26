@@ -1,20 +1,10 @@
 import NextAuth, { type NextAuthOptions } from "next-auth";
-import { PrismaClient, $Enums, User } from "@prisma/client";
+import { PrismaClient, User } from "@prisma/client";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
 
-declare module "next-auth" {
-  interface Session {
-    user: {
-      id: string;
-      name?: string | null;
-      email: string;
-      role: $Enums.Role;
-    };
-  }
-}
 export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
@@ -53,13 +43,13 @@ export const authOptions: NextAuthOptions = {
 
           return {
             id: user.id,
-            name: user.name,
+            name: user.first_name + " " + user.last_name,
             email: user.email,
             role: user.role,
+            image: user.image,
           };
-        } catch (error) {
-          console.error("Error in authorize callback:", error);
-          throw new Error("An unexpected error occurred.");
+        } catch (error: any) {
+          throw new Error(error.message);
         }
       },
     }),
@@ -74,20 +64,23 @@ export const authOptions: NextAuthOptions = {
   },
   secret: process.env.NEXTAUTH_SECRET,
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger, session }) {
       if (user) {
         return {
           ...token,
           id: user.id,
-          name: (user as User).first_name + " " + (user as User).last_name,
-          email: (user as User).email,
+          name: user.name,
+          email: user.email,
           role: (user as User).role,
         };
+      }
+      if (trigger === "update") {
+        token.email = session.email;
       }
 
       return token;
     },
-    async session({ session, token }) {
+    async session({ session }) {
       return session;
     },
   },
@@ -96,7 +89,6 @@ export const authOptions: NextAuthOptions = {
     signOut: "/",
   },
 };
-
 const handler = NextAuth(authOptions);
 
 export { handler as GET, handler as POST };
