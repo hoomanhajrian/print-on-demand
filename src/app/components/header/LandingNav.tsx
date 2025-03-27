@@ -9,11 +9,7 @@ import { Role } from "@/app/types";
 
 export default function LandingNav() {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
-  const { data: session } = useSession() as {
-    data: (Session & { user: { role: Role } }) | null;
-  };
-  console.log("Session:", session);
-  console.log("Session user:", session?.user);
+  const session = useSession().data as Session & { user: { role: Role } };
 
   const openLoginModal = () => {
     setIsLoginModalOpen(true);
@@ -22,6 +18,7 @@ export default function LandingNav() {
   const closeLoginModal = () => {
     setIsLoginModalOpen(false);
   };
+  useEffect(() => {}, [session?.user]);
 
   return (
     <nav className="bg-gray-800 p-4">
