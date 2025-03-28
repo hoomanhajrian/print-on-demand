@@ -1,19 +1,21 @@
 "use client";
-import { FC, useEffect } from "react";
+import { FC, useEffect, useState } from "react";
 import { Alert, Stack } from "@mui/material";
 import { useDispatch, useSelector } from "react-redux";
 import { hideAlert } from "@/app/features/alert/alertSlice";
 import { RootState, AppDispatch } from "@/app/store";
 
-interface AlertComponentProps {
-  // We'll use Redux state instead of props
-}
-
-const AlertComponent: FC<AlertComponentProps> = () => {
+const AlertComponent: FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const { open, message, status, timeout } = useSelector(
     (state: RootState) => state.alert
   );
+
+  const [isHydrated, setIsHydrated] = useState(false);
+
+  useEffect(() => {
+    setIsHydrated(true); // Mark the component as hydrated
+  }, []);
 
   useEffect(() => {
     if (open) {
@@ -24,6 +26,11 @@ const AlertComponent: FC<AlertComponentProps> = () => {
       return () => clearTimeout(timer);
     }
   }, [open, timeout, dispatch]);
+
+  // Prevent rendering until hydration is complete
+  if (!isHydrated) {
+    return null;
+  }
 
   return (
     <Stack
