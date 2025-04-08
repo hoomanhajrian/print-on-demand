@@ -2,9 +2,13 @@
 
 import { useEffect } from "react";
 import { signOut, getSession } from "next-auth/react";
+import { useDispatch } from "react-redux";
+import { showAlert } from "@/app/features/alert/alertSlice";
+import { clearUser } from "@/app/features/auth/userSlice";
 
 const IdleLogout = ({ timeout = 300000 }: { timeout?: number }) => {
   // `timeout` is the inactivity duration in milliseconds (default: 5 minutes)
+  const dispatch = useDispatch(); // Assuming you have a Redux store set up
 
   useEffect(() => {
     let timer: NodeJS.Timeout;
@@ -19,6 +23,8 @@ const IdleLogout = ({ timeout = 300000 }: { timeout?: number }) => {
     const handleLogout = async () => {
       const session = await getSession(); // Check if a session exists
       if (session) {
+        dispatch(showAlert({ message: "Session expired", status: "warning" })); // Show alert for session expiration
+        dispatch(clearUser()); // Clear user data from Redux store
         signOut(); // Logs out the user
       }
     };
