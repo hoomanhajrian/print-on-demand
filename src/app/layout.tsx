@@ -23,3 +23,13 @@ export default function RootLayout({
     </html>
   );
 }
+export const dynamic = "force-dynamic"; // This page will always be server-rendered
+export const metadata = {
+  title: "Print-On-Demand",
+  description: "Print-On-Demand Platform",
+};
+export const revalidate = 0; // This page will never be cached
+export const fetchCache = "force-no-store"; // This page will never be cached
+export const dynamicParams = false; // This page will never be cached
+export const preferredRegion = "auto"; // This page will always be server-rendered
+export const runtime = "edge"; // This page will always be server-rendered
