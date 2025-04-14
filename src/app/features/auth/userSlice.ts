@@ -1,4 +1,4 @@
-import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { createSlice, PayloadAction, createSelector } from "@reduxjs/toolkit";
 
 interface UserState {
   email: string | null;
@@ -43,17 +43,20 @@ export const userSlice = createSlice({
 
 export const { setUserFromToken, clearUser } = userSlice.actions;
 
-export const getUser = (state: { user: UserState }) => {
-  // Check if running on the client side
-  if (typeof window !== "undefined") {
-    const userFromStorage = sessionStorage.getItem("user");
-    if (userFromStorage) {
-      return JSON.parse(userFromStorage);
+export const getUser = createSelector(
+  (state: { user: UserState }) => state.user,
+  (user) => {
+    // Check if running on the client side
+    if (typeof window !== "undefined") {
+      const userFromStorage = sessionStorage.getItem("user");
+      if (userFromStorage) {
+        return JSON.parse(userFromStorage);
+      }
     }
-  }
 
-  // Fallback to Redux state
-  return state.user;
-};
+    // Fallback to Redux state
+    return user;
+  }
+);
 
 export default userSlice.reducer;
