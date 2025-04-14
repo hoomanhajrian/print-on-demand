@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { FC, useEffect, useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import {
   Container,
@@ -8,61 +8,87 @@ import {
   TextField,
   Button,
   Avatar,
-  Alert,
 } from "@mui/material";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { getSession } from "next-auth/react";
 import { Session } from "next-auth";
+import { useDispatch } from "react-redux";
 import * as z from "zod";
+import { showAlert } from "@/app/features/alert/alertSlice";
+import CloseIcon from "@mui/icons-material/Close";
+import IconButton from "@mui/material/IconButton";
 
 const profileUpdateSchema = z
   .object({
+    id: z.string().optional(),
     email: z.string().email("Invalid email address"),
     profileImage: z.string().optional(),
-    password: z.string().min(8, "Password must be at least 8 characters"),
+    password: z
+      .string()
+      .optional()
+      .nullable()
+      .refine((value) => !value || value.length >= 8, {
+        message: "Password must be at least 8 characters",
+      })
+      .refine((value) => !value || value.length <= 20, {
+        message: "Password must be at most 20 characters",
+      }),
     confirmPassword: z
       .string()
-      .min(8, "Password must be at least 8 characters"),
+      .optional()
+      .nullable()
+      .refine((value) => !value || value.length >= 8, {
+        message: "Confirm Password must be at least 8 characters",
+      })
+      .refine((value) => !value || value.length <= 20, {
+        message: "Confirm Password must be at most 20 characters",
+      }),
   })
-  .refine(({ password, confirmPassword }) => password === confirmPassword, {
-    message: "Passwords don't match",
-    path: ["confirm"],
-  });
+  .refine(
+    (data) => {
+      // Only validate confirmPassword if password is provided
+      if (data.password) {
+        return data.password === data.confirmPassword;
+      }
+      return true;
+    },
+    {
+      message: "Passwords don't match",
+      path: ["confirmPassword"],
+    }
+  );
 
-const ProfileUpdateForm: React.FC = () => {
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
+const ProfileUpdateForm: FC = () => {
+  // states
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [session, updateSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(false);
+  const [initialValues, setInitialValues] = useState<any>({}); // Store initial form values
 
+  // define hooks
+  const dispatch = useDispatch();
   const router = useRouter();
-
-  console.log("Seeeeeeeeeesion", session);
 
   const {
     register,
     handleSubmit,
-    formState: { errors },
     watch,
+    formState: { errors },
     setValue,
   } = useForm<z.infer<typeof profileUpdateSchema>>({
     resolver: zodResolver(profileUpdateSchema),
   });
 
   const onSubmit = async (data: z.infer<typeof profileUpdateSchema>) => {
-    setError(null);
-    setSuccess(null);
     setLoading(true);
 
-    if (data.password !== data.confirmPassword) {
-      setError("Passwords do not match");
-      setLoading(false);
-      return;
-    }
-
     const formData = new FormData();
+    setLoading(true);
+
+    // Log the form data
+    console.log("Form data:", data);
+
     formData.append("email", data.email);
     if (data.password && data.confirmPassword) {
       formData.append("password", data.password);
@@ -72,25 +98,46 @@ const ProfileUpdateForm: React.FC = () => {
     }
 
     try {
-      const response = await fetch("/api/user", {
+      profileUpdateSchema.parse(data); // Validate the data with Zod
+
+      const response = await fetch("/api/users", {
         method: "PUT",
         body: formData,
       });
 
-      const result = await response.json();
+      const result: { message?: string; error?: string } =
+        await response.json();
 
       if (response.ok) {
         setLoading(false);
-        setSuccess("Profile updated successfully");
+        dispatch(showAlert({ message: "Profile updated", status: "success" }));
         setTimeout(() => {
           router.push("/main");
         }, 2000);
       } else {
-        setError(result.error || "An unknown error occurred");
+        setLoading(false);
+        dispatch(
+          showAlert({
+            message: result.error || "Failed to update profile",
+            status: "error",
+          })
+        );
       }
     } catch (err: any) {
       setLoading(false);
-      setError(err.message || "An unexpected error occurred");
+      if (err instanceof z.ZodError) {
+        const errorMessages = err.errors
+          .map((error) => error.message)
+          .join(", ");
+        dispatch(showAlert({ message: errorMessages, status: "error" }));
+      } else {
+        dispatch(
+          showAlert({
+            message: err.message || "An unexpected error occurred",
+            status: "error",
+          })
+        );
+      }
     }
   };
 
@@ -98,14 +145,16 @@ const ProfileUpdateForm: React.FC = () => {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 2 * 1024 * 1024) {
-        // 2MB limit
-        setError("File size should be less than 2MB");
         return;
       }
       const reader = new FileReader();
       reader.onloadend = () => {
         setPreviewImage(reader.result as string);
         setValue("profileImage", reader.result as string);
+        // Reset the file input's value
+        if (e.target instanceof HTMLInputElement) {
+          e.target.value = "";
+        }
       };
       reader.readAsDataURL(file);
     }
@@ -115,12 +164,31 @@ const ProfileUpdateForm: React.FC = () => {
     const getUser = async () => {
       const session = await getSession();
       updateSession(session);
+      setPreviewImage(session?.user?.image || null);
+
+      // Set initial form values
+      const initialFormValues = {
+        id: session?.user?.id || "",
+        email: session?.user?.email || "",
+        profileImage: session?.user?.image || "",
+        password: "",
+        confirmPassword: "",
+      };
+      setInitialValues(initialFormValues);
+
+      // Set form values
+      setValue("id", initialFormValues.id);
+      setValue("email", initialFormValues.email);
+      setValue("profileImage", initialFormValues.profileImage);
     };
     getUser();
-    return () => {
-      updateSession(null);
-    };
-  }, []);
+  }, [setValue]);
+
+  // Watch form values
+  const currentValues = watch();
+  // Check if there are any changes
+  const isFormChanged =
+    JSON.stringify(currentValues) !== JSON.stringify(initialValues);
 
   return (
     <Container maxWidth="sm">
@@ -128,9 +196,12 @@ const ProfileUpdateForm: React.FC = () => {
         <Typography variant="h4" component="h1" gutterBottom>
           Update Profile
         </Typography>
-        {error && <Alert severity="error">{error}</Alert>}
-        {success && <Alert severity="success">{success}</Alert>}
-        <form onSubmit={handleSubmit(onSubmit)}>
+        <form
+          onSubmit={(e: FormEvent) => {
+            e.preventDefault();
+            handleSubmit(onSubmit)(e);
+          }}
+        >
           <Box sx={{ mb: 3 }}>
             <TextField
               label={session?.user?.email}
@@ -140,23 +211,43 @@ const ProfileUpdateForm: React.FC = () => {
               {...register("email")}
             />
           </Box>
-          <Box sx={{ mb: 3 }}>
-            <Button variant="contained" component="label">
-              Upload Profile Image
-              <input
-                type="file"
-                hidden
-                accept="image/*"
-                onChange={handleFileChange}
-              />
-            </Button>
-          </Box>
-          <Box sx={{ mb: 3, textAlign: "center" }}>
+          <Box sx={{ mb: 3, textAlign: "center", position: "relative" }}>
             <Avatar
-              src={previewImage || session?.user?.image || ""}
+              src={previewImage || ""}
               alt="Profile Image"
               sx={{ width: 100, height: 100, margin: "auto" }}
             />
+            {previewImage ? (
+              <IconButton
+                onClick={() => {
+                  setPreviewImage(""); // Reset the preview image
+                  setValue("profileImage", ""); // Clear the profileImage field
+                }}
+                sx={{
+                  position: "absolute",
+                  top: "10%",
+                  right: "40%",
+                  backgroundColor: "rgba(255, 255, 255, 0.8)",
+                  "&:hover": {
+                    backgroundColor: "rgba(255, 255, 255, 1)",
+                  },
+                }}
+              >
+                <CloseIcon sx={{ width: 10, height: 10 }} />
+              </IconButton>
+            ) : null}
+            <Box sx={{ mt: 2 }}>
+              <Button variant="contained" component="label">
+                Upload New Picture
+                <input
+                  type="file"
+                  hidden
+                  accept="image/.png, image/.jpg, image/.jpeg"
+                  max={2 * 1024 * 1024}
+                  onChange={handleFileChange}
+                />
+              </Button>
+            </Box>
           </Box>
           <Box sx={{ mb: 3 }}>
             <TextField
@@ -176,6 +267,7 @@ const ProfileUpdateForm: React.FC = () => {
               variant="outlined"
               fullWidth
               {...register("confirmPassword")}
+              disabled={!watch("password")}
               error={!!errors.confirmPassword}
               helperText={errors.confirmPassword?.message}
             />
@@ -186,8 +278,9 @@ const ProfileUpdateForm: React.FC = () => {
             variant="contained"
             color="primary"
             fullWidth
+            disabled={loading || !isFormChanged} // Disable if loading or no changes
           >
-            Update Profile
+            {loading ? "Updating..." : "Update Profile"}
           </Button>
         </form>
       </Box>

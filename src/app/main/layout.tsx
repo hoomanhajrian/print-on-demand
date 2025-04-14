@@ -1,7 +1,7 @@
 import Navbar from "../components/header/Navbar";
 import { Metadata } from "next";
 
-export default function MainLayout({
+export default async function MainLayout({
   children,
 }: {
   children: React.ReactNode;
