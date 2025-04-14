@@ -22,14 +22,10 @@ import { redirect } from "next/navigation";
 import { Gig } from "@prisma/client";
 import { GigCard } from "@/app/components/subComponents/GigCard";
 
-interface User {
-  name: string | null;
-  email: string | null;
-  tags?: string[] | null;
-}
-
-interface Session {
-  user: User;
+interface fetchedGigs {
+  paginatedGigs: Gig[][]; // Array of arrays, each containing gigs for a page
+  totalGigs: number;
+  totalPages: number;
 }
 
 // gigs per page
@@ -47,15 +43,20 @@ const UserDashboard = () => {
   // Extract user information from the session
   const user = session?.data?.user || null;
   // If no session or user, prompt the user to log in
-
+  if (!user) {
+    redirect("/");
+  }
+  // Fetch gigs from the API
+  // This function fetches gigs from the API and sets the state
   const fetchGigs = async () => {
     setLoading(true); // Set loading to true before fetching
     try {
       const response = await fetch(`/api/gigs`);
       if (!response.ok) throw new Error("Failed to fetch gigs");
-      const fetchedGigs = await response.json();
-      setTotalPages(Math.ceil(fetchedGigs.length / 6)); // Calculate total pages based on gigs length
-      setGigs(fetchedGigs);
+      const fetchedData = await response.json();
+      console.info("Fetched gigs:", fetchedData);
+      setTotalPages(fetchedData.totalPages); // Set total pages from the response
+      setGigs(fetchedData.paginatedGigs[currentPage - 1]); // Set gigs for the current page
     } catch (error) {
       console.error("Error fetching gigs:", error);
     } finally {
@@ -191,6 +192,13 @@ const UserDashboard = () => {
             count={totalPages}
             defaultPage={1}
             variant="outlined"
+            shape="rounded"
+            page={currentPage}
+            onChange={(event, value) => {
+              setCurrentPage(value);
+              fetchGigs(); // Fetch gigs when page changes
+            }}
+            color="primary"
           />
         </Box>
       </Box>
