@@ -15,6 +15,7 @@ import {
   Typography,
   Container,
   Box,
+  Pagination,
 } from "@mui/material";
 import { useSession } from "next-auth/react";
 import { redirect } from "next/navigation";
@@ -32,12 +33,12 @@ interface Session {
 }
 
 // gigs per page
-const gigsPerPage = 5;
+const gigsPerPage = 6;
 
 const UserDashboard = () => {
   const [gigs, setGigs] = useState<Gig[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
 
   // Fetch the session on the server side
@@ -53,10 +54,8 @@ const UserDashboard = () => {
       const response = await fetch(`/api/gigs`);
       if (!response.ok) throw new Error("Failed to fetch gigs");
       const fetchedGigs = await response.json();
-      console.log("Fetched gigs:", fetchedGigs); // Log the fetched gigs
-
+      setTotalPages(Math.ceil(fetchedGigs.length / 6)); // Calculate total pages based on gigs length
       setGigs(fetchedGigs);
-      // setTotalPages(data.gigs.length / gigsPerPage); // Calculate total pages based on gigs length
     } catch (error) {
       console.error("Error fetching gigs:", error);
     } finally {
@@ -179,11 +178,21 @@ const UserDashboard = () => {
         >
           Gigs For You
         </Typography>
-        <div className="grid grid-cols-2 sm:grid-cols-1 lg:grid-cols-3 gap-4">
+        <Box
+          component={"div"}
+          className="grid grid-cols-1 md:grid-cols-2 gap-4 mr-auto ml-auto w-max"
+        >
           {gigs.map((gig: Gig) => (
             <GigCard key={gig.id} gig={gig} />
           ))}
-        </div>
+
+          <Pagination
+            className="mr-auto ml-auto mt-4 col-span-2"
+            count={totalPages}
+            defaultPage={1}
+            variant="outlined"
+          />
+        </Box>
       </Box>
     </Container>
   );
