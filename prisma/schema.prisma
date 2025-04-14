@@ -60,13 +60,16 @@ model User {
   created_at    DateTime  @default(now())
   updated_at    DateTime  @default(now())
 
-  reviewsFrom Review[]  @relation("ReviewsFrom")
-  reviewsTo   Review[]  @relation("ReviewsTo")
-  orders      Order[]
-  printers    Printer[]
-  gigs        Gig[]
-  accounts    Account[]
-  sessions    Session[]
+  reviewsFrom    UserReview[] @relation("UserReviewsFrom")
+  reviewsTo      UserReview[] @relation("UserReviewsTo")
+  gigReviewsFrom GigReview[]  @relation("GigReviewsFrom")
+  gigReviewsTo   GigReview[]  @relation("GigReviewsTo")
+  orders         Order[]
+  printers       Printer[] // A user can have many printers
+  gigs           Gig[]
+  accounts       Account[]
+  sessions       Session[]
+  UserReview     UserReview[]
 }
 
 model VerificationToken {
@@ -78,18 +81,21 @@ model VerificationToken {
 }
 
 model Order {
-  id             String   @id @default(cuid())
-  client         User     @relation(fields: [client_id], references: [id])
-  client_id      String
-  printer        Printer  @relation(fields: [printer_id], references: [id])
-  printer_id     String
-  status         String // 'pending', 'accepted', etc. - Use enum in your application logic
-  price          Float
-  address        String   @default("")
-  payment_status String // 'pending', 'paid', 'refunded' - Use enum in your application logic
-  created_at     DateTime @default(now())
-  updated_at     DateTime @updatedAt
-  review         Review? // One-to-one with Review
+  id              String   @id @default(cuid())
+  client          User     @relation(fields: [client_id], references: [id])
+  client_id       String
+  printer         Printer  @relation(fields: [printer_id], references: [id])
+  printer_id      String
+  status          String // 'pending', 'accepted', etc. - Use enum in your application logic
+  price           Float
+  senderAddress   String   @default("") // Sender address for the order
+  receiverAddress String   @default("") // Receiver address for the order
+  gigData         Json // Gig information at the time of the order (snapshot)
+  payment_status  String // 'pending', 'paid', 'refunded' - Use enum in your application logic
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  userReviews UserReview[] // A single order can have multiple user reviews
 }
 
 model Gig {
@@ -105,9 +111,10 @@ model Gig {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @default(now())
 
-  printers Printer[] @relation("GigPrinters")
-  user     User      @relation(fields: [user_id], references: [id])
+  printers String[] // Array of printer IDs associated with this gig
+  user     User        @relation(fields: [user_id], references: [id])
   user_id  String
+  reviews  GigReview[] // A gig can have many reviews
 }
 
 model Printer {
@@ -117,7 +124,6 @@ model Printer {
   max_dimentions  Json
   user            User             @relation(fields: [user_id], references: [id])
   user_id         String
-  gigs            Gig[]            @relation("GigPrinters")
   orders          Order[]
   materialCharges MaterialCharge[]
 }
@@ -130,14 +136,29 @@ model MaterialCharge {
   printer_id    String
 }
 
-model Review {
+model GigReview {
   id         String   @id @default(cuid())
-  order      Order    @relation(fields: [order_id], references: [id])
-  order_id   String   @unique
-  from       User     @relation("ReviewsFrom", fields: [from_id], references: [id])
+  gig        Gig      @relation(fields: [gig_id], references: [id])
+  gig_id     String
+  from       User     @relation("GigReviewsFrom", fields: [from_id], references: [id])
   from_id    String
-  to         User     @relation("ReviewsTo", fields: [to_id], references: [id])
+  to         User     @relation("GigReviewsTo", fields: [to_id], references: [id])
   to_id      String
+  rating     Int
+  comment    String?
+  created_at DateTime @default(now())
+}
+
+model UserReview {
+  id         String   @id @default(cuid())
+  user       User     @relation(fields: [user_id], references: [id])
+  user_id    String
+  from       User     @relation("UserReviewsFrom", fields: [from_id], references: [id])
+  from_id    String
+  to         User     @relation("UserReviewsTo", fields: [to_id], references: [id])
+  to_id      String
+  order      Order?   @relation(fields: [order_id], references: [id])
+  order_id   String? // Nullable field for general reviews
   rating     Int
   comment    String?
   created_at DateTime @default(now())

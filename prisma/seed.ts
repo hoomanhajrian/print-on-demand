@@ -1,196 +1,156 @@
-import { PrismaClient, Role } from '@prisma/client';
-import { v4 as uuidv4 } from 'uuid';
+import { PrismaClient, Role } from "@prisma/client";
+import { v4 as uuidv4 } from "uuid";
 
 const prisma = new PrismaClient();
 
 async function seed() {
   try {
     // Create users
+    const users = [];
+
     const adminUser = await prisma.user.upsert({
-      where: { email: 'admin@example.com' },
+      where: { email: "admin@example.com" },
       update: {},
       create: {
         id: uuidv4(),
         role: Role.ADMIN,
-        email: 'admin@example.com',
-        first_name: 'Admin',
-        last_name: 'User',
-        password_hash: '$2b$10$anLmZ2tHw6ua4Lv7b5sO.NmVMS2ROmWg1ZJESSCNNHH1RrnMZLRe',
+        email: "admin@example.com",
+        first_name: "Admin",
+        last_name: "User",
+        password_hash:
+          "$2b$10$anLmZ2tHw6ua4Lv7b5sO.NmVMS2ROmWg1ZJESSCNNHH1RrnMZLRe",
       },
     });
+    users.push(adminUser);
 
     const editorUser = await prisma.user.upsert({
-      where: { email: 'editor@example.com' },
+      where: { email: "editor@example.com" },
       update: {},
       create: {
         id: uuidv4(),
         role: Role.EDITOR,
-        email: 'editor@example.com',
-        first_name: 'Editor',
-        last_name: 'User',
+        email: "editor@example.com",
+        first_name: "Editor",
+        last_name: "User",
       },
     });
 
-    const user1 = await prisma.user.upsert({
-      where: { email: 'user1@example.com' },
-      update: {},
-      create: {
-        id: uuidv4(),
-        role: Role.USER,
-        email: 'user1@example.com',
-        first_name: 'User',
-        last_name: 'One',
-      },
-    });
-
-    const user2 = await prisma.user.upsert({
-      where: { email: 'user2@example.com' },
-      update: {},
-      create: {
-        id: uuidv4(),
-        role: Role.USER,
-        email: 'user2@example.com',
-        first_name: 'User',
-        last_name: 'Two',
-      },
-    });
+    users.push(editorUser);
+    for (let i = 1; i <= 10; i++) {
+      const user = await prisma.user.upsert({
+        where: { email: `user${i}@example.com` },
+        update: {},
+        create: {
+          id: uuidv4(),
+          role: Role.USER,
+          email: `user${i}@example.com`,
+          first_name: `User`,
+          last_name: `${i}`,
+          phone: `123456789${i}`,
+        },
+      });
+      users.push(user);
+    }
 
     // Create printers
-    const printer1 = await prisma.printer.create({
-      data: {
-        id: uuidv4(),
-        brand: 'Brand A',
-        model: 'Model X',
-        max_dimentions: { length: 200, width: 200, height: 200 },
-        user_id: user1.id,
-      },
-    });
-
-    const printer2 = await prisma.printer.create({
-      data: {
-        id: uuidv4(),
-        brand: 'Brand B',
-        model: 'Model Y',
-        max_dimentions: { length: 300, width: 300, height: 300 },
-        user_id: user2.id,
-      },
-    });
-
-    // Create material charges
-    await prisma.materialCharge.createMany({
-      data: [
-        {
+    const printers = [];
+    for (let i = 1; i <= 10; i++) {
+      const printer = await prisma.printer.create({
+        data: {
           id: uuidv4(),
-          material: 'PLA',
-          chargePerHour: 10.0,
-          printer_id: printer1.id,
+          brand: `Brand ${i}`,
+          model: `Model ${i}`,
+          max_dimentions: {
+            length: 200 + i * 10,
+            width: 200 + i * 10,
+            height: 200 + i * 10,
+          },
+          user_id: users[i % users.length].id, // Assign printers to users in a round-robin fashion
         },
-        {
-          id: uuidv4(),
-          material: 'ABS',
-          chargePerHour: 15.0,
-          printer_id: printer1.id,
-        },
-        {
-          id: uuidv4(),
-          material: 'PLA',
-          chargePerHour: 12.0,
-          printer_id: printer2.id,
-        },
-        {
-          id: uuidv4(),
-          material: 'ABS',
-          chargePerHour: 18.0,
-          printer_id: printer2.id,
-        },
-      ],
-    });
+      });
+      printers.push(printer);
+    }
 
     // Create gigs
-    const gig1 = await prisma.gig.create({
-      data: {
-        id: uuidv4(),
-        title: 'Custom T-Shirt',
-        description: 'Design your own T-shirt with your favorite image or text.',
-        duration: 2,
-        price: 25.0,
-        imageUrl: 'https://example.com/tshirt.jpg',
-        category: 'Apparel',
-        tags: ['t-shirt', 'custom', 'design'],
-        user_id: user1.id,
-        printers: {
-          connect: [{ id: printer1.id }, { id: printer2.id }],
+    const gigs = [];
+    for (let i = 1; i <= 10; i++) {
+      const gig = await prisma.gig.create({
+        data: {
+          id: uuidv4(),
+          title: `Sample Gig ${i}`,
+          description: `This is a description for Sample Gig ${i}.`,
+          duration: Math.floor(Math.random() * 5) + 1, // Random duration between 1 and 5
+          price: Math.floor(Math.random() * 50) + 10, // Random price between $10 and $60
+          imageUrl: `https://example.com/sample-gig-${i}.jpg`,
+          category: i % 2 === 0 ? "Apparel" : "Home Goods",
+          tags: i % 2 === 0 ? ["custom", "design"] : ["home", "decor"],
+          user_id: users[i % users.length].id, // Assign gigs to users in a round-robin fashion
+          printers: [printers[i % printers.length].id], // Assign printers to gigs in a round-robin fashion
         },
-      },
-    });
-
-    const gig2 = await prisma.gig.create({
-      data: {
-        id: uuidv4(),
-        title: 'Ceramic Mug',
-        description: 'Personalize your coffee mug with a unique design.',
-        duration: 1,
-        price: 15.0,
-        imageUrl: 'https://example.com/mug.jpg',
-        category: 'Home Goods',
-        tags: ['mug', 'custom', 'coffee'],
-        user_id: user2.id,
-        printers: {
-          connect: [{ id: printer1.id }],
-        },
-      },
-    });
+      });
+      gigs.push(gig);
+    }
 
     // Create orders
-    const order1 = await prisma.order.create({
-      data: {
-        id: uuidv4(),
-        client_id: user1.id,
-        printer_id: printer1.id,
-        status: 'pending',
-        price: 50.0,
-        address: '123 Main St',
-        payment_status: 'pending',
-      },
-    });
-
-    const order2 = await prisma.order.create({
-      data: {
-        id: uuidv4(),
-        client_id: user2.id,
-        printer_id: printer2.id,
-        status: 'accepted',
-        price: 75.0,
-        address: '456 Elm St',
-        payment_status: 'paid',
-      },
-    });
-
-    // Create reviews
-    await prisma.review.createMany({
-      data: [
-        {
+    const orders = [];
+    for (let i = 1; i <= 10; i++) {
+      const order = await prisma.order.create({
+        data: {
           id: uuidv4(),
-          order_id: order1.id,
-          from_id: user1.id,
-          to_id: user2.id,
-          rating: 5,
-          comment: 'Great product!',
+          client_id: users[i % users.length].id, // Assign orders to users in a round-robin fashion
+          printer_id: printers[i % printers.length].id, // Assign printers to orders in a round-robin fashion
+          status: i % 2 === 0 ? "pending" : "accepted",
+          price: Math.floor(Math.random() * 100) + 20, // Random price between $20 and $120
+          senderAddress: `${i} Main St`,
+          receiverAddress: `${i} Elm St`,
+          gigData: {
+            title: `Sample Gig ${i}`,
+            description: `This is a description for Sample Gig ${i}.`,
+            duration: Math.floor(Math.random() * 5) + 1,
+            price: Math.floor(Math.random() * 50) + 10,
+            category: i % 2 === 0 ? "Apparel" : "Home Goods",
+            tags: i % 2 === 0 ? ["custom", "design"] : ["home", "decor"],
+          },
+          payment_status: i % 2 === 0 ? "pending" : "paid",
         },
-        {
-          id: uuidv4(),
-          order_id: order2.id,
-          from_id: user2.id,
-          to_id: user1.id,
-          rating: 4,
-          comment: 'Very satisfied!',
-        },
-      ],
-    });
+      });
+      orders.push(order);
+    }
 
-    console.log('Seed data created successfully!');
+    // Create gig reviews
+    for (let i = 1; i <= 10; i++) {
+      await prisma.gigReview.create({
+        data: {
+          id: uuidv4(),
+          gig_id: gigs[i % gigs.length].id, // Assign reviews to gigs in a round-robin fashion
+          from_id: users[(i + 1) % users.length].id, // Reviewer
+          to_id: users[i % users.length].id, // Gig owner
+          rating: Math.floor(Math.random() * 5) + 1, // Random rating between 1 and 5
+          comment: `This is a review for Sample Gig ${i}.`,
+          created_at: new Date(),
+        },
+      });
+    }
+
+    // Create user reviews
+    for (let i = 1; i <= 10; i++) {
+      await prisma.userReview.create({
+        data: {
+          id: uuidv4(),
+          user_id: users[i % users.length].id, // User being reviewed
+          from_id: users[(i + 1) % users.length].id, // Reviewer
+          to_id: users[i % users.length].id, // User being reviewed
+          order_id: i % 2 === 0 ? orders[i % orders.length].id : null, // Tie to an order or leave null
+          rating: Math.floor(Math.random() * 5) + 1, // Random rating between 1 and 5
+          comment: `This is a review for User ${i}.`,
+          created_at: new Date(),
+        },
+      });
+    }
+
+    console.log("Seed data created successfully!");
   } catch (error) {
-    console.error('Error seeding data:', error);
+    console.error("Error seeding data:", error);
   } finally {
     await prisma.$disconnect();
   }
