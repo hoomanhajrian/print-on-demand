@@ -30,7 +30,7 @@
     "next": "^15.3.0-canary.42",
     "next-auth": "^4.24.11",
     "pg": "^8.13.3",
-    "prisma": "^6.5.0",
+    "prisma": "^6.6.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-hook-form": "^7.54.2",
