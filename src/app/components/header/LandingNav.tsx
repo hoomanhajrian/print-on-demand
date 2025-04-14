@@ -1,16 +1,17 @@
 "use client";
-
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import LoginCard from "@/app/components/auth/LoginCard";
 import { useSession, signOut } from "next-auth/react";
 import { Session } from "next-auth";
 import { Role } from "@/app/types";
+import { useDispatch } from "react-redux";
+import { clearUser } from "@/app/features/auth/userSlice";
 
 export default function LandingNav() {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const session = useSession().data as Session & { user: { role: Role } };
-
+  const dispatch = useDispatch();
   const openLoginModal = () => {
     setIsLoginModalOpen(true);
   };
@@ -80,7 +81,10 @@ export default function LandingNav() {
           <button
             type="button"
             className="focus:outline-none text-white bg-yellow-400 hover:bg-yellow-500 focus:ring-4 focus:ring-yellow-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:focus:ring-yellow-900"
-            onClick={() => signOut({ callbackUrl: "/" })}
+            onClick={() => {
+              dispatch(clearUser());
+              signOut({ callbackUrl: "/" });
+            }}
           >
             Sign Out
           </button>
