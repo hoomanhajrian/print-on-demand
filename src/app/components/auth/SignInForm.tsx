@@ -1,5 +1,4 @@
 "use client";
-
 import { useState, useEffect } from "react";
 import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
@@ -8,6 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { UseSelector, useDispatch } from "react-redux";
 import { showAlert } from "@/app/features/alert/alertSlice";
 import * as z from "zod";
+import { setUserFromToken } from "@/app/features/auth/userSlice";
 
 const signInFormSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -44,9 +44,27 @@ const SignInForm: React.FC<SignInFormProps> = ({ onClose }) => {
     if (result?.error) {
       setLoading(false);
       dispatch(showAlert({ message: result.error, status: "error" }));
-    } else {
-      router.push("/main");
-      onClose();
+    } else if (result?.ok) {
+      try {
+        // Decode the token and extract user information
+        const session = await fetch("/api/auth/session").then((res) =>
+          res.json()
+        );
+
+        // Dispatch the user data to the Redux store
+        dispatch(setUserFromToken(session.user));
+
+        dispatch(
+          showAlert({ message: "Logged in successfully", status: "success" })
+        );
+        router.push("/main");
+        onClose();
+      } catch (error) {
+        console.error("Failed to decode token:", error);
+        dispatch(
+          showAlert({ message: "Failed to process login", status: "error" })
+        );
+      }
     }
   };
 
