@@ -1,9 +1,7 @@
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
-import formidable from "formidable";
-import fs from "fs";
-import path from "path";
+import * as formidable from "formidable";
 
 const prisma = new PrismaClient();
 
@@ -71,114 +69,73 @@ export async function POST(req: Request) {
 }
 
 export async function PUT(req: Request) {
-  const form = new formidable.IncomingForm({
-    uploadDir: path.join(process.cwd(), "public", "uploads"),
-    filename: (name, ext, part, form) => {
-      return `${Date.now()}-${part.originalFilename}`;
-    },
-  });
+  console.log("PUT request received");
 
-  return new Promise(async (resolve, reject) => {
-    try {
-      const chunks = [];
-      for await (const chunk of req.body as any) {
-        chunks.push(chunk);
-      }
-      const buffer = Buffer.concat(chunks);
-      const incomingMessage = {
-        ...req,
-        headers: Object.fromEntries(req.headers.entries()),
-        body: buffer,
-        on: (event: string, callback: (chunk: any) => void) => {
-          if (event === "data") {
-            callback(buffer);
-          } else if (event === "end") {
-            callback(null);
-          }
-        },
-      } as any;
+  const form = new formidable.IncomingForm();
 
-      form.parse(incomingMessage, async (err, fields, files) => {
-        if (err) {
-          console.error("Error parsing form:", err);
-          resolve(
-            NextResponse.json(
-              { error: "Failed to parse form" },
-              { status: 500 }
-            )
-          );
-          return;
-        }
+  try {
+    // Parse the form data using formidable
+    const { Readable } = require("stream");
 
-        const { id, email, password, role } = fields;
-        let profileImage = fields.profileImage as string[];
-
-        if (!id) {
-          resolve(
-            NextResponse.json(
-              { error: "User ID is required for update" },
-              { status: 400 }
-            )
-          );
-          return;
-        }
-
-        // Check if a new image was uploaded
-        if (files.profileImage) {
-          let file: formidable.File;
-          if (Array.isArray(files.profileImage)) {
-            file = files.profileImage[0];
-          } else {
-            file = files.profileImage as formidable.File;
-          }
-          profileImage = [`/uploads/${file.newFilename}`];
-        } else {
-          // if no new image, we need to get the existing image url from the database.
-          const existingUser = await prisma.user.findUnique({
-            where: { id: Array.isArray(id) ? id[0] : id },
-          });
-          if (existingUser) {
-            profileImage = existingUser?.image ? [existingUser.image] : [];
-          }
-        }
-
-        try {
-          const hashedPassword = password
-            ? await bcrypt.hash(
-                Array.isArray(password) ? password[0] : password,
-                10
-              )
-            : undefined;
-
-          const updatedUser = await prisma.user.update({
-            where: { id: Array.isArray(id) ? id[0] : id },
-            data: {
-              email: Array.isArray(email) ? email[0] : email || "",
-              password_hash: hashedPassword,
-              image: profileImage[0],
-            },
-          });
-          resolve(NextResponse.json(updatedUser, { status: 200 }));
-        } catch (error) {
-          console.error("Error updating user:", error);
-          resolve(
-            NextResponse.json(
-              { error: "Failed to update user" },
-              { status: 500 }
-            )
-          );
-        }
+    const formData = await new Promise((resolve, reject) => {
+      const readableStream = Readable.from(req.body as any);
+      form.parse(readableStream, (err, fields, files) => {
+        if (err) reject(err);
+        resolve({ fields, files });
       });
-    } catch (error) {
-      console.error("Error processing request:", error);
-      resolve(
-        NextResponse.json(
-          { error: "Failed to process request" },
-          { status: 500 }
-        )
+    });
+
+    const { fields, files } = formData as {
+      fields: Record<string, any>;
+      files: Record<string, formidable.File>;
+    };
+
+    const { id, email, password } = fields;
+
+    if (!id) {
+      return NextResponse.json(
+        { error: "User ID is required for update" },
+        { status: 400 }
       );
     }
-  });
+
+    let profileImage = fields.profileImage;
+
+    // Check if a new image was uploaded
+    if (files.profileImage) {
+      const file = Array.isArray(files.profileImage)
+        ? files.profileImage[0]
+        : files.profileImage;
+
+      // Read the file and convert it to a Base64 string
+      const fs = require("fs");
+      const imageBuffer = fs.readFileSync(file.filepath);
+      profileImage = imageBuffer.toString("base64");
+    }
+
+    // Hash the password if provided
+    const hashedPassword = password
+      ? await bcrypt.hash(password, 10)
+      : undefined;
+
+    // Update the user in the database
+    const updatedUser = await prisma.user.update({
+      where: { id },
+      data: {
+        email: email || undefined,
+        password_hash: hashedPassword,
+        image: profileImage || undefined, // Store the Base64 string in the database
+      },
+    });
+
+    return NextResponse.json(updatedUser, { status: 200 });
+  } catch (error) {
+    console.error("Error processing PUT request:", error);
+    return NextResponse.json(
+      { error: "Failed to process PUT request" },
+      { status: 500 }
+    );
+  }
 }
 export async function DELETE(req: Request) {
   try {

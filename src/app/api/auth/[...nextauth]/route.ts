@@ -1,7 +1,19 @@
-import NextAuth, { type NextAuthOptions } from "next-auth";
+import NextAuth, { type NextAuthOptions, type Session } from "next-auth";
 import { PrismaClient, User } from "@prisma/client";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
+
+declare module "next-auth" {
+  interface Session {
+    user: {
+      id: string;
+      role: string;
+      name?: string | null;
+      email?: string | null;
+      image?: string | null;
+    };
+  }
+}
 
 const prisma = new PrismaClient();
 const secret = process.env.NEXTAUTH_SECRET;
@@ -43,7 +55,7 @@ export const authOptions: NextAuthOptions = {
           }
 
           return {
-            id: user.id,
+            id: user.id, // Include the user ID
             name: user.first_name + " " + user.last_name,
             email: user.email,
             role: user.role,
@@ -60,16 +72,15 @@ export const authOptions: NextAuthOptions = {
     strategy: "jwt",
     updateAge: 60 * 60 * 24, // 24 hours
     maxAge: 60 * 60 * 24 * 3, // 3 days
-    // async encode() {},
-    // async decode() {},
   },
   secret: secret,
   callbacks: {
     async jwt({ token, user, trigger, session }) {
       if (user) {
+        // Add user ID and role to the token
         return {
           ...token,
-          id: user.id,
+          id: user.id, // Include the user ID in the token
           name: user.name,
           email: user.email,
           role: (user as User).role,
@@ -81,7 +92,12 @@ export const authOptions: NextAuthOptions = {
 
       return token;
     },
-    async session({ session }) {
+    async session({ session, token }) {
+      // Add the user ID and role to the session object
+      if (session.user) {
+        session.user.id = token.id as string; // Include the user ID in the session
+        session.user.role = token.role as string; // Include the user role in the session
+      }
       return session;
     },
   },
@@ -90,6 +106,7 @@ export const authOptions: NextAuthOptions = {
     signOut: "/",
   },
 };
+
 const handler = NextAuth(authOptions);
 
 export { handler as GET, handler as POST };
