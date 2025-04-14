@@ -1,5 +1,5 @@
-import { Roboto } from "next/font/google";
 import Providers from "@/app/providers/Providers";
+import { Roboto } from "next/font/google";
 import "./globals.css";
 import IdleLogout from "./components/auth/IdleLogout";
 import AlertComponent from "@/app/components/notification/AlertComponent";
@@ -12,15 +12,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <Providers>
+    <Providers>
+      <html lang="en">
         <IdleLogout />
         <body className={roboto.variable}>
           <AlertComponent />
           {children}
         </body>
-      </Providers>
-    </html>
+      </html>
+    </Providers>
   );
 }
 export const dynamic = "force-dynamic"; // This page will always be server-rendered
