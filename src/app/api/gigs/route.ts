@@ -4,28 +4,12 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 export async function GET(req: Request) {
   try {
-    const url = new URL(req.url);
-    const limit = parseInt(url.searchParams.get("limit") || "6", 10); // Default to 6 items per page
-
+    // const url = new URL(req.url);
     // Fetch all gigs
-    const allGigs = await prisma.gig.findMany();
-
-    // Group gigs into pages
-    const totalGigs = allGigs.length;
-    const totalPages = Math.ceil(totalGigs / limit);
-    const paginatedGigs = [];
-
-    for (let i = 0; i < totalPages; i++) {
-      const start = i * limit;
-      const end = start + limit;
-      paginatedGigs.push(allGigs.slice(start, end));
-    }
-
+    const gigs = await prisma.gig.findMany();
     return NextResponse.json(
       {
-        paginatedGigs, // Array of arrays, each containing gigs for a page
-        totalGigs,
-        totalPages,
+        gigs,
       },
       { status: 200 }
     );

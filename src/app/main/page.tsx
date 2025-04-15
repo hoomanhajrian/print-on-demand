@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { ChangeEvent, useEffect, useRef, useState } from "react";
 import {
   Card,
   CardContent,
@@ -22,56 +22,101 @@ import { redirect } from "next/navigation";
 import { Gig } from "@prisma/client";
 import { GigCard } from "@/app/components/subComponents/GigCard";
 
-interface fetchedGigs {
-  paginatedGigs: Gig[][]; // Array of arrays, each containing gigs for a page
-  totalGigs: number;
-  totalPages: number;
-}
-
-// gigs per page
-const gigsPerPage = 6;
+const GIGS_PER_PAGE = 6; // Number of gigs per page
 
 const UserDashboard = () => {
-  const [gigs, setGigs] = useState<Gig[]>([]);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [loading, setLoading] = useState(true);
+  const allGigs = useRef<Gig[]>([]); // Original fetched gigs
+  const [filteredGigs, setFilteredGigs] = useState<Gig[][]>([]); // Gigs to display on the front end
+  const [currentPage, setCurrentPage] = useState(1); // Current page for pagination
+  const [totalPages, setTotalPages] = useState(1); // Total number of pages
+  const [loading, setLoading] = useState(true); // Loading state
+  const [searchTerm, setSearchTerm] = useState<string>(""); // Search term for filtering
 
-  // Fetch the session on the server side
   const session = useSession();
 
   // Extract user information from the session
   const user = session?.data?.user || null;
+
   // If no session or user, prompt the user to log in
   if (!user) {
     redirect("/");
   }
+
   // Fetch gigs from the API
-  // This function fetches gigs from the API and sets the state
   const fetchGigs = async () => {
-    setLoading(true); // Set loading to true before fetching
+    setLoading(true);
     try {
       const response = await fetch(`/api/gigs`);
       if (!response.ok) throw new Error("Failed to fetch gigs");
-      const fetchedData = await response.json();
-      console.info("Fetched gigs:", fetchedData);
-      setTotalPages(fetchedData.totalPages); // Set total pages from the response
-      setGigs(fetchedData.paginatedGigs[currentPage - 1]); // Set gigs for the current page
+
+      const fetchedData: { gigs: Gig[] } = await response.json();
+      allGigs.current = fetchedData.gigs; // Set the original fetched gigs
+      console.log("Fetched gigs:", allGigs.current); // Log the fetched gigs
+      setFilteredGigs(paginateGigs(allGigs.current)); // Paginate the fetched gigs
     } catch (error) {
       console.error("Error fetching gigs:", error);
     } finally {
-      setLoading(false); // Set loading to false after fetching
+      setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchGigs();
-  }, []); // Fetch gigs when currentPage changes
+  const paginateGigs = (gigsList: Gig[]) => {
+    const paginatedGigs: Gig[][] = []; // Array to hold paginated gigs
+    const totalPages = Math.ceil(gigsList.length / GIGS_PER_PAGE); // Calculate total pages
 
+    for (let i = 0; i < totalPages; i++) {
+      const startIndex = i * GIGS_PER_PAGE;
+      const endIndex = startIndex + GIGS_PER_PAGE;
+      paginatedGigs.push(gigsList.slice(startIndex, endIndex));
+    }
+
+    setTotalPages(totalPages); // Update total pages state
+    return paginatedGigs; // Return the paginated gigs
+  };
+
+  useEffect(() => {
+    console.log("Fetching gigs...");
+    fetchGigs(); // Fetch gigs when the component mounts
+  }, []);
+
+  // Update filtered gigs when `currentPage` or `searchTerm` changes
+  useEffect(() => {
+    if (currentPage > 1 || currentPage < 1) setCurrentPage(1); // Ensure current page is not less than 1
+
+    if (currentPage > totalPages) setCurrentPage(totalPages); // Ensure current page is not greater than total pages
+    if (allGigs.current.length === 0) return; // If no gigs, do nothing
+
+    if (searchTerm === "") {
+      // If no search term, paginate all gigs
+      setFilteredGigs(paginateGigs(allGigs.current));
+    } else {
+      // Filter gigs by search term
+      const filtered = allGigs.current.filter((gig: Gig) =>
+        gig.title.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+      setFilteredGigs(paginateGigs(filtered)); // Paginate the filtered gigs
+    }
+  }, [searchTerm, allGigs]);
+
+  useEffect(() => {
+    if (filteredGigs.length === 0) return;
+    console.log("filtered gigs", filteredGigs);
+    console.log("currentPage", currentPage);
+  }, [currentPage]); // Update filtered gigs when `currentPage` changes
+
+  // Handle session status
   useEffect(() => {
     session.status === "loading" ? setLoading(true) : setLoading(false); // Wait for session to load
     if (session.status === "unauthenticated") redirect("/"); // Redirect to login
   }, [session.status]);
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <Typography variant="h4">Fetching gigs...</Typography>
+      </div>
+    );
+  }
 
   return (
     <Container
@@ -162,43 +207,41 @@ const UserDashboard = () => {
           </CardContent>
         </Card>
       </Box>
-
-      {/* Main Content (Gigs) */}
+      {/* Search Input */}
       <Box component="div" className="w-full md:w-3/4">
         <Box className="mb-4">
           <Input
             type="text"
-            placeholder="Search gigs by title or tags..."
+            placeholder="Search gigs by title..."
             className="w-full md:w-1/2"
+            onChange={(e: ChangeEvent<HTMLInputElement>) =>
+              setSearchTerm(e.target.value)
+            }
           />
         </Box>
-        <Typography
-          component="h2"
-          variant="h2"
-          className="text-2xl font-bold mb-4"
-        >
-          Gigs For You
+        {/* Gigs List */}
+        <Typography variant="h4" className="mb-4">
+          Gigs for you
         </Typography>
         <Box
           component={"div"}
           className="grid grid-cols-1 md:grid-cols-2 gap-4 mr-auto ml-auto w-max"
         >
-          {gigs.map((gig: Gig) => (
-            <GigCard key={gig.id} gig={gig} />
-          ))}
-
+          {filteredGigs.length > 0 && filteredGigs[currentPage - 1] ? (
+            filteredGigs[currentPage - 1].map((gig: Gig) => (
+              <GigCard key={gig.id} gig={gig} />
+            ))
+          ) : (
+            <Typography>No gigs found.</Typography>
+          )}
+          {/* Pagination */}
           <Pagination
-            className="mr-auto ml-auto mt-4 col-span-2"
-            count={totalPages}
-            defaultPage={1}
+            className="mt-4"
+            count={totalPages} // Total pages
+            page={currentPage} // Current page
+            onChange={(_, page) => setCurrentPage(page)} // Update current page
             variant="outlined"
             shape="rounded"
-            page={currentPage}
-            onChange={(event, value) => {
-              setCurrentPage(value);
-              fetchGigs(); // Fetch gigs when page changes
-            }}
-            color="primary"
           />
         </Box>
       </Box>
