@@ -4,9 +4,15 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 export async function GET(req: Request) {
   try {
-    // const url = new URL(req.url);
     // Fetch all gigs
-    const gigs = await prisma.gig.findMany();
+    const gigs = await prisma.gig.findMany({
+      where: {
+        active: true,
+      },
+      orderBy: {
+        createdAt: "asc",
+      },
+    });
     return NextResponse.json(
       {
         gigs,
