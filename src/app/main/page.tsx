@@ -61,6 +61,7 @@ const UserDashboard = () => {
   };
 
   const paginateGigs = (gigsList: Gig[]) => {
+    setCurrentPage(1); // Reset current page to 1
     const paginatedGigs: Gig[][] = []; // Array to hold paginated gigs
     const totalPages = Math.ceil(gigsList.length / GIGS_PER_PAGE); // Calculate total pages
 
@@ -73,16 +74,13 @@ const UserDashboard = () => {
     setTotalPages(totalPages); // Update total pages state
     return paginatedGigs; // Return the paginated gigs
   };
-
+  // Fetch gigs when the component mounts
   useEffect(() => {
-    console.log("Fetching gigs...");
-    fetchGigs(); // Fetch gigs when the component mounts
+    fetchGigs();
   }, []);
 
   // Update filtered gigs when `currentPage` or `searchTerm` changes
   useEffect(() => {
-    if (currentPage > 1 || currentPage < 1) setCurrentPage(1); // Ensure current page is not less than 1
-
     if (currentPage > totalPages) setCurrentPage(totalPages); // Ensure current page is not greater than total pages
     if (allGigs.current.length === 0) return; // If no gigs, do nothing
 
@@ -97,12 +95,6 @@ const UserDashboard = () => {
       setFilteredGigs(paginateGigs(filtered)); // Paginate the filtered gigs
     }
   }, [searchTerm, allGigs]);
-
-  useEffect(() => {
-    if (filteredGigs.length === 0) return;
-    console.log("filtered gigs", filteredGigs);
-    console.log("currentPage", currentPage);
-  }, [currentPage]); // Update filtered gigs when `currentPage` changes
 
   // Handle session status
   useEffect(() => {
@@ -121,12 +113,12 @@ const UserDashboard = () => {
   return (
     <Container
       component="div"
-      className="container mx-auto p-4 flex flex-col md:flex-row gap-8"
+      className="container mx-auto p-4 flex flex-col w-full gap-4"
     >
       {/* Left Sidebar (User Info) */}
-      <Box component="div" className="w-full md:w-1/4">
+      <Box component="div" className="w-full">
         <Card className="mb-4">
-          <CardHeader title="User Info" />
+          <CardHeader title="User Dashboard" />
           <CardContent>
             <>
               <Typography component="p" className="mb-2">
@@ -208,15 +200,16 @@ const UserDashboard = () => {
         </Card>
       </Box>
       {/* Search Input */}
-      <Box component="div" className="w-full md:w-3/4">
+      <Box component="div" className="w-full">
         <Box className="mb-4">
           <Input
             type="text"
             placeholder="Search gigs by title..."
             className="w-full md:w-1/2"
-            onChange={(e: ChangeEvent<HTMLInputElement>) =>
-              setSearchTerm(e.target.value)
-            }
+            onChange={(e: ChangeEvent<HTMLInputElement>) => {
+              console.log(e.target.value);
+              setSearchTerm(e.target.value);
+            }}
           />
         </Box>
         {/* Gigs List */}
@@ -225,9 +218,19 @@ const UserDashboard = () => {
         </Typography>
         <Box
           component={"div"}
-          className="grid grid-cols-1 md:grid-cols-2 gap-4 mr-auto ml-auto w-max"
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 w-full gap-4 mr-auto ml-auto"
         >
-          {filteredGigs.length > 0 && filteredGigs[currentPage - 1] ? (
+          <Pagination
+            className="mt-4 mr-auto ml-auto col-span-1 md:col-span-2 lg:col-span-3"
+            count={totalPages} // Total pages
+            page={currentPage} // Current page
+            onChange={(_, page) => setCurrentPage(page)} // Update current page
+            variant="outlined"
+            shape="rounded"
+          />
+          {filteredGigs &&
+          filteredGigs.length > 0 &&
+          filteredGigs[currentPage - 1] ? (
             filteredGigs[currentPage - 1].map((gig: Gig) => (
               <GigCard key={gig.id} gig={gig} />
             ))
@@ -236,7 +239,7 @@ const UserDashboard = () => {
           )}
           {/* Pagination */}
           <Pagination
-            className="mt-4"
+            className="mt-4 mr-auto ml-auto col-span-1 md:col-span-2 lg:col-span-3"
             count={totalPages} // Total pages
             page={currentPage} // Current page
             onChange={(_, page) => setCurrentPage(page)} // Update current page
