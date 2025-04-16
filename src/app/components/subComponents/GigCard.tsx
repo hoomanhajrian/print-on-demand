@@ -12,7 +12,7 @@ import {
   IconButtonProps,
   Typography,
 } from "@mui/material";
-import { red } from "@mui/material/colors";
+import { blueGrey } from "@mui/material/colors";
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import ShareIcon from "@mui/icons-material/Share";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
@@ -22,6 +22,7 @@ import { Gig, User } from "@prisma/client";
 import { Badge } from "@mui/material";
 import { Suspense } from "react";
 import { SkeletonGigCard } from "../loading/SkeletonGigCard";
+import Image from "next/image";
 
 interface ExpandMoreProps extends IconButtonProps {
   expand: boolean;
@@ -91,10 +92,10 @@ export const GigCard = ({ gig }: { gig: Gig }) => {
     return <SkeletonGigCard />; // Show loading skeleton while fetching
   } else {
     return (
-      <Card sx={{ maxWidth: 345 }}>
+      <Card sx={{ maxWidth: "100%" }}>
         <CardHeader
           avatar={
-            <Avatar sx={{ bgcolor: red[500] }} aria-label="recipe">
+            <Avatar sx={{ bgcolor: blueGrey[500] }} aria-label="recipe">
               {gigPoster
                 ? gigPoster.image !== null || undefined || ""
                   ? gigPoster.image
@@ -116,12 +117,14 @@ export const GigCard = ({ gig }: { gig: Gig }) => {
             gigPoster?.last_name
           }
         />
-        <CardMedia
-          component="img"
-          height="194"
-          image="/static/images/cards/paella.jpg"
+        <Image
+          width={100}
+          height={200}
+          style={{ width: "100%", height: "auto" }}
+          src="/images/3d-printer.jpg" // Placeholder image
           alt={gig.title}
         />
+        <CardMedia />
         <CardContent>
           <Typography variant="body2" sx={{ color: "text.secondary" }}>
             Category: {gig.category}
