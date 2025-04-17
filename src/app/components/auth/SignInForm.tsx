@@ -8,6 +8,7 @@ import { UseSelector, useDispatch } from "react-redux";
 import { showAlert } from "@/app/features/alert/alertSlice";
 import * as z from "zod";
 import { setUserFromToken } from "@/app/features/auth/userSlice";
+import { Google } from "@mui/icons-material";
 
 const signInFormSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -139,6 +140,16 @@ const SignInForm: React.FC<SignInFormProps> = ({ onClose }) => {
           </a>
         </div>
       </form>
+      <div className="mt-4 text-center">
+        <span className="text-gray-500">or</span>
+        <button
+          className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline mt-2"
+          onClick={() => signIn("google")}
+        >
+          Google
+          <Google />
+        </button>
+      </div>
     </div>
   );
 };

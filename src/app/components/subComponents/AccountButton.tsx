@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Box,
   Avatar,
@@ -19,11 +19,14 @@ import { signOut } from "next-auth/react";
 import { useDispatch } from "react-redux";
 import { clearUser } from "@/app/features/auth/userSlice";
 import { redirect } from "next/navigation";
+import { Favorite } from "@mui/icons-material";
+import { useSession } from "next-auth/react";
 
 export const AccountButton = () => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
   const dispatch = useDispatch();
+  const { data: session } = useSession();
 
   const handleClick = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -43,7 +46,10 @@ export const AccountButton = () => {
             aria-haspopup="true"
             aria-expanded={open ? "true" : undefined}
           >
-            <Avatar sx={{ width: 32, height: 32 }}>M</Avatar>
+            <Avatar
+              sx={{ width: 32, height: 32 }}
+              src={session?.user.image ?? ""}
+            />
           </IconButton>
         </Tooltip>
       </Box>
@@ -108,6 +114,12 @@ export const AccountButton = () => {
           My Gigs
         </MenuItem>
         <Divider />
+        <MenuItem onClick={handleClose}>
+          <ListItemIcon>
+            <Favorite fontSize="small" />
+          </ListItemIcon>
+          Favorites
+        </MenuItem>
         <MenuItem onClick={handleClose}>
           <ListItemIcon>
             <ShoppingCartIcon fontSize="small" />

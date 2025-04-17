@@ -4,13 +4,13 @@ import { useState, useEffect } from "react";
 import LoginCard from "@/app/components/auth/LoginCard";
 import { useSession, signOut } from "next-auth/react";
 import { Session } from "next-auth";
-import { Role } from "@/app/types";
 import { useDispatch } from "react-redux";
-import { clearUser } from "@/app/features/auth/userSlice";
+import { clearUser, setUserFromToken } from "@/app/features/auth/userSlice";
+import { redirect } from "next/navigation";
 
 export default function LandingNav() {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
-  const session = useSession().data as Session & { user: { role: Role } };
+  const session = useSession();
   const dispatch = useDispatch();
   const openLoginModal = () => {
     setIsLoginModalOpen(true);
@@ -19,7 +19,14 @@ export default function LandingNav() {
   const closeLoginModal = () => {
     setIsLoginModalOpen(false);
   };
-  useEffect(() => {}, [session?.user]);
+  useEffect(() => {
+    if (
+      session.status === "authenticated" &&
+      session.data.user.role === "USER"
+    ) {
+      redirect("/main");
+    }
+  }, [session]);
 
   return (
     <nav className="bg-gray-800 p-4">
@@ -77,7 +84,7 @@ export default function LandingNav() {
             </div>
           </div>
         </div>
-        {session?.user ? (
+        {session.status === "authenticated" ? (
           <button
             type="button"
             className="focus:outline-none text-white bg-yellow-400 hover:bg-yellow-500 focus:ring-4 focus:ring-yellow-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:focus:ring-yellow-900"
