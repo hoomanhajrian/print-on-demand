@@ -52,7 +52,7 @@ export const authOptions: NextAuthOptions = {
           }
 
           if (!user.password_hash) {
-            throw new Error("No password found.");
+            throw new Error("Use Google to sign in.");
           }
 
           const isPasswordValid = await bcrypt.compare(

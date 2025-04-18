@@ -16,16 +16,7 @@ const Home = () => {
       <LandingNav />
       <Container maxWidth="lg">
         {/* Hero Section */}
-        <Box
-          sx={{
-            textAlign: "center",
-            py: 5,
-            backgroundImage: "url('/images/hero-background.jpg')",
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-            color: "white",
-          }}
-        >
+        <Box sx={styles}>
           <Typography variant="h2" component="h1" gutterBottom>
             Welcome to Our Print-On-Demand Service
           </Typography>
@@ -211,3 +202,98 @@ const Home = () => {
 };
 
 export default Home;
+
+const styles = {
+  textAlign: "center",
+  py: 5,
+  backgroundImage: "url('/images/3d-printer.jpg')",
+  backgroundSize: "cover",
+  backgroundPosition: "center",
+  color: "white",
+  padding: "50px",
+  borderRadius: "8px",
+  boxShadow: 3,
+  marginBottom: "20px",
+  // Add a gradient overlay
+  "&::before": {
+    content: '""',
+    position: "absolute",
+    top: 0,
+    left: 0,
+    width: "100%",
+    height: "100%",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    borderRadius: "8px",
+  },
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "center",
+  justifyContent: "center",
+  position: "relative",
+  zIndex: 1,
+  // Ensure the text is above the overlay
+  "& > *": {
+    position: "relative",
+    zIndex: 2,
+  },
+  // Ensure the button is above the overlay
+  "& button": {
+    position: "relative",
+    zIndex: 2,
+  },
+  // Ensure the typography is above the overlay
+  "& h2, & p": {
+    position: "relative",
+    zIndex: 2,
+  },
+  // Ensure the box is above the overlay
+  "& .MuiBox-root": {
+    position: "relative",
+    zIndex: 2,
+  },
+  // Ensure the container is above the overlay
+  "& .MuiContainer-root": {
+    position: "relative",
+    zIndex: 2,
+  },
+  // Ensure the grid is above the overlay
+  "& .MuiGrid-root": {
+    position: "relative",
+    zIndex: 2,
+  },
+  // Ensure the card is above the overlay
+  "& .MuiCard-root": {
+    position: "relative",
+    zIndex: 2,
+  },
+  // Ensure the card media is above the overlay
+  "& .MuiCardMedia-root": {
+    position: "relative",
+    zIndex: 2,
+  },
+  // Ensure the card content is above the overlay
+  "& .MuiCardContent-root": {
+    position: "relative",
+    zIndex: 2,
+  },
+  // Ensure the button is above the overlay
+  "& .MuiButton-root": {
+    position: "relative",
+    zIndex: 2,
+  },
+  // Ensure the typography is above the overlay
+  "& .MuiTypography-root": {
+    position: "relative",
+    zIndex: 2,
+  },
+  // Ensure the grid item is above the overlay
+  "& .MuiGridItem-root": {
+    position: "relative",
+    zIndex: 2,
+  },
+  // Ensure the grid container is above the overlay
+  "& .MuiGridContainer-root": {
+    position: "relative",
+    zIndex: 2,
+  },
+};

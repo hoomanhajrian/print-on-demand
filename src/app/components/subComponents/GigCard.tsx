@@ -6,6 +6,7 @@ import {
   CardMedia,
   CardContent,
   CardActions,
+  CardActionArea,
   Collapse,
   Avatar,
   IconButton,
@@ -93,46 +94,43 @@ export const GigCard = ({ gig }: { gig: Gig }) => {
   } else {
     return (
       <Card sx={{ maxWidth: "100%" }}>
-        <CardHeader
-          avatar={
-            <Avatar sx={{ bgcolor: blueGrey[500] }} aria-label="recipe">
-              {gigPoster
-                ? gigPoster.image !== null || undefined || ""
-                  ? gigPoster.image
-                  : gigPoster.first_name && gigPoster.first_name[0]
-                : "U"}
-            </Avatar>
-          }
-          action={
-            <IconButton aria-label="settings">
-              <MoreVertIcon />
-            </IconButton>
-          }
-          title={gig.title}
-          subheader={
-            new Date(gig.createdAt).toDateString() +
-            " by " +
-            gigPoster?.first_name +
-            " " +
-            gigPoster?.last_name
-          }
-        />
-        <Image
-          width={100}
-          height={200}
-          style={{ width: "100%", height: "auto" }}
-          src="/images/3d-printer.jpg" // Placeholder image
-          alt={gig.title}
-        />
-        <CardMedia />
-        <CardContent>
-          <Typography variant="body2" sx={{ color: "text.secondary" }}>
-            Category: {gig.category}
-          </Typography>
-          <Typography variant="body2" sx={{ color: "text.secondary" }}>
-            Price: ${gig.price}
-          </Typography>
-        </CardContent>
+        <CardActionArea>
+          <CardHeader
+            avatar={
+              <Avatar sx={{ bgcolor: blueGrey[500] }} aria-label="recipe">
+                {gigPoster
+                  ? gigPoster.image !== null || undefined || ""
+                    ? gigPoster.image
+                    : gigPoster.first_name && gigPoster.first_name[0]
+                  : "U"}
+              </Avatar>
+            }
+            title={gig.title}
+            subheader={
+              new Date(gig.createdAt).toDateString() +
+              " by " +
+              gigPoster?.first_name +
+              " " +
+              gigPoster?.last_name
+            }
+          />
+          <Image
+            width={100}
+            height={200}
+            style={{ width: "100%", height: "auto" }}
+            src="/images/3d-printer.jpg" // Placeholder image
+            alt={gig.title}
+          />
+          <CardMedia />
+          <CardContent>
+            <Typography variant="body2" sx={{ color: "text.secondary" }}>
+              Category: {gig.category}
+            </Typography>
+            <Typography variant="body2" sx={{ color: "text.secondary" }}>
+              Price: ${gig.price}
+            </Typography>
+          </CardContent>
+        </CardActionArea>
         <CardActions disableSpacing>
           <IconButton aria-label="add to favorites">
             <FavoriteIcon />

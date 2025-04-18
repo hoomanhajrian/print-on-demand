@@ -31,6 +31,8 @@ const UserDashboard = () => {
   const [totalPages, setTotalPages] = useState(1); // Total number of pages
   const [loading, setLoading] = useState(true); // Loading state
   const [searchTerm, setSearchTerm] = useState<string>(""); // Search term for filtering
+  const [userOrders, setUserOrders] = useState([]); // User orders state
+  const [userGigs, setUserGigs] = useState([]); // User gigs state
 
   const session = useSession();
 
@@ -41,6 +43,8 @@ const UserDashboard = () => {
   if (!user) {
     redirect("/");
   }
+
+  const fetchOrders = async () => {}; // Placeholder for fetching user orders
 
   // Fetch gigs from the API
   const fetchGigs = async () => {
@@ -118,82 +122,81 @@ const UserDashboard = () => {
       {/* Left Sidebar (User Info) */}
       <Box component="div" className="w-full">
         <Card className="mb-4">
-          <CardHeader title="User Dashboard" />
+          <CardHeader title={`${user?.name} Dashboard`} />
           <CardContent>
             <>
-              <Typography component="p" className="mb-2">
-                <strong>Name:</strong> {user?.name}
-              </Typography>
-              <Typography component="p" className="mb-4">
-                <strong>Email:</strong> {user?.email}
-              </Typography>
-
               <Typography component="h4" className="mb-2 font-semibold">
                 Orders:
               </Typography>
               <TableContainer component={Paper}>
-                <Table size="small">
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>
-                        <strong>Order ID</strong>
-                      </TableCell>
-                      <TableCell>
-                        <strong>Status</strong>
-                      </TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {/* Replace with dynamic data */}
-                    <TableRow>
-                      <TableCell>12345</TableCell>
-                      <TableCell>Completed</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell>67890</TableCell>
-                      <TableCell>Pending</TableCell>
-                    </TableRow>
-                  </TableBody>
-                </Table>
+                {userOrders.length > 0 ? (
+                  <Table size="small">
+                    <TableHead>
+                      <TableRow>
+                        <TableCell>
+                          <strong>Order ID</strong>
+                        </TableCell>
+                        <TableCell>
+                          <strong>Status</strong>
+                        </TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {/* Replace with dynamic data */}
+                      {userOrders.map(() => {
+                        return (
+                          <TableRow>
+                            <TableCell>67890</TableCell>
+                            <TableCell>Pending</TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                ) : (
+                  <Typography>No orders found.</Typography>
+                )}
               </TableContainer>
 
               <Typography component="h4" className="mt-4 mb-2 font-semibold">
                 Gigs:
               </Typography>
               <TableContainer component={Paper}>
-                <Table size="small">
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>
-                        <strong>Gig ID</strong>
-                      </TableCell>
-                      <TableCell>
-                        <strong>Gig Title</strong>
-                      </TableCell>
-                      <TableCell>
-                        <strong>Status</strong>
-                      </TableCell>
-                      <TableCell>
-                        <strong>Price</strong>
-                      </TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {/* Replace with dynamic data */}
-                    <TableRow>
-                      <TableCell>001</TableCell>
-                      <TableCell>Logo Design</TableCell>
-                      <TableCell>Active</TableCell>
-                      <TableCell>$50</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell>002</TableCell>
-                      <TableCell>Website Development</TableCell>
-                      <TableCell>Completed</TableCell>
-                      <TableCell>$500</TableCell>
-                    </TableRow>
-                  </TableBody>
-                </Table>
+                {userGigs.length > 0 ? (
+                  <Table size="small">
+                    <TableHead>
+                      <TableRow>
+                        <TableCell>
+                          <strong>Gig ID</strong>
+                        </TableCell>
+                        <TableCell>
+                          <strong>Gig Title</strong>
+                        </TableCell>
+                        <TableCell>
+                          <strong>Status</strong>
+                        </TableCell>
+                        <TableCell>
+                          <strong>Price</strong>
+                        </TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {/* Replace with dynamic data */}
+                      {userGigs.map(() => {
+                        return (
+                          <TableRow>
+                            <TableCell>001</TableCell>
+                            <TableCell>Logo Design</TableCell>
+                            <TableCell>Active</TableCell>
+                            <TableCell>$50</TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                ) : (
+                  <Typography>No gigs found.</Typography>
+                )}
               </TableContainer>
             </>
           </CardContent>

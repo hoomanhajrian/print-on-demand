@@ -1,4 +1,4 @@
-import { Navbar } from "../components/header/Navbar";
+import { MainNavbar } from "../components/header/MainNavbar";
 import { Metadata } from "next";
 
 export default async function MainLayout({
@@ -8,7 +8,7 @@ export default async function MainLayout({
 }) {
   return (
     <div className="main-layout">
-      <Navbar />
+      <MainNavbar />
       <div className="main-content">{children}</div>
     </div>
   );

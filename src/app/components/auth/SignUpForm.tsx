@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import bcrypt from "bcryptjs";
+import { signIn } from "next-auth/react";
 
 const signUpFormSchema = z.object({
   firstName: z.string().min(2, "First name must be at least 2 characters"),
@@ -12,9 +13,6 @@ const signUpFormSchema = z.object({
   email: z.string().email("Invalid email address"),
   password: z.string().min(6, "Password must be at least 6 characters"),
   confirmPassword: z.string().min(6, "Password must be at least 6 characters"),
-  role: z.enum(["CLIENT", "PRINTER"], {
-    required_error: "You need to select a role.",
-  }),
 });
 
 interface SignUpFormProps {
@@ -47,7 +45,6 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ onClose }) => {
         lastName: data.lastName,
         email: data.email,
         password: hashedPassword,
-        role: data.role,
       };
 
       const response = await fetch("/api/users", {
@@ -61,6 +58,18 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ onClose }) => {
       if (!response.ok) {
         const errorData = await response.json();
         setError(errorData.message || "An unexpected error occurred");
+        setLoading(false);
+        return;
+      }
+
+      const result = await signIn("credentials", {
+        redirect: false,
+        email: data.email,
+        password: data.password,
+      });
+
+      if (result?.error) {
+        setError(result.error);
         setLoading(false);
         return;
       }
@@ -188,39 +197,6 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ onClose }) => {
           {errors.confirmPassword && (
             <p className="text-red-500 text-xs italic">
               {errors.confirmPassword?.message}
-            </p>
-          )}
-        </div>
-        <div className="mb-6">
-          <label className="block text-gray-700 text-sm font-bold mb-2">
-            Role
-          </label>
-          <div className="flex items-center">
-            <input
-              type="radio"
-              id="clientRole"
-              className="mr-2"
-              value="CLIENT"
-              {...register("role")}
-            />
-            <label htmlFor="clientRole" className="text-gray-700 text-sm mr-4">
-              Client
-            </label>
-
-            <input
-              type="radio"
-              id="printerRole"
-              className="mr-2"
-              value="PRINTER"
-              {...register("role")}
-            />
-            <label htmlFor="printerRole" className="text-gray-700 text-sm">
-              Printer
-            </label>
-          </div>
-          {errors.role && (
-            <p className="text-red-500 text-xs italic">
-              {errors.role?.message}
             </p>
           )}
         </div>
