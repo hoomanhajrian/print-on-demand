@@ -44,21 +44,22 @@ model Session {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String?   @unique
-  emailVerified DateTime?
-  phone         String?   @default("")
+  id            String   @id @default(cuid())
+  user_name     String?
+  email         String?  @unique
+  emailVerified Boolean  @default(false)
+  phone         String?  @default("")
   image         String?
-  role          Role      @default(USER)
+  role          Role     @default(USER)
   first_name    String?
   last_name     String?
   age           Int?
+  favorite      String[] @default([])
   password_hash String?
-  active        Boolean   @default(true)
-  active_at     DateTime  @default(now())
-  created_at    DateTime  @default(now())
-  updated_at    DateTime  @default(now())
+  active        Boolean  @default(true)
+  active_at     DateTime @default(now())
+  created_at    DateTime @default(now())
+  updated_at    DateTime @default(now())
 
   reviewsFrom    UserReview[] @relation("UserReviewsFrom")
   reviewsTo      UserReview[] @relation("UserReviewsTo")
@@ -98,23 +99,30 @@ model Order {
   userReviews UserReview[] // A single order can have multiple user reviews
 }
 
+model Category {
+  id          String        @id @default(cuid())
+  name        String
+  gigs        Gig[]         @relation("CategoryGigs") // Relation to the join table
+  CategoryGig CategoryGig[]
+}
+
 model Gig {
-  id          String   @id @default(cuid())
+  id          String        @id @default(cuid())
   title       String
   description String?
   duration    Int
   price       Float
   imageUrl    String?
-  category    String?
   tags        String[] // Keywords for search and filtering
-  active      Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @default(now())
-
-  printers String[] // Array of printer IDs associated with this gig
-  user     User        @relation(fields: [user_id], references: [id])
-  user_id  String
-  reviews  GigReview[] // A gig can have many reviews
+  active      Boolean       @default(false)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @default(now())
+  printers    String[] // Array of printer IDs associated with this gig
+  user        User          @relation(fields: [user_id], references: [id])
+  user_id     String
+  reviews     GigReview[] // A gig can have many reviews
+  categories  Category[]    @relation("CategoryGigs") // Relation to the join table
+  CategoryGig CategoryGig[]
 }
 
 model Printer {
@@ -162,4 +170,15 @@ model UserReview {
   rating     Int
   comment    String?
   created_at DateTime @default(now())
+}
+
+/// Join table for the many-to-many relationship between Category and Gig
+model CategoryGig {
+  categoryId String
+  gigId      String
+
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  gig      Gig      @relation(fields: [gigId], references: [id], onDelete: Cascade)
+
+  @@id([categoryId, gigId]) // Composite primary key
 }
