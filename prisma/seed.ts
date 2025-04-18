@@ -1,5 +1,20 @@
 import { PrismaClient, Role } from "@prisma/client";
 import { v4 as uuidv4 } from "uuid";
+import bycrypt from "bcryptjs";
+
+// Add mock categories related to 3D printing
+const categories = [
+  { name: "Prototyping" },
+  { name: "Custom Parts" },
+  { name: "Art & Design" },
+  { name: "Jewelry" },
+  { name: "Miniatures" },
+  { name: "Home Decor" },
+  { name: "Engineering" },
+  { name: "Medical Models" },
+  { name: "Education" },
+  { name: "Automotive" },
+];
 
 const prisma = new PrismaClient();
 
@@ -17,8 +32,7 @@ async function seed() {
         email: "admin@example.com",
         first_name: "Admin",
         last_name: "User",
-        password_hash:
-          "$2b$10$anLmZ2tHw6ua4Lv7b5sO.NmVMS2ROmWg1ZJESSCNNHH1RrnMZLRe",
+        password_hash: bycrypt.hashSync("123456", 10), // Hash the password
       },
     });
     users.push(adminUser);
@@ -32,6 +46,7 @@ async function seed() {
         email: "editor@example.com",
         first_name: "Editor",
         last_name: "User",
+        password_hash: bycrypt.hashSync("123456", 10), // Hash the password
       },
     });
 
@@ -71,6 +86,18 @@ async function seed() {
       printers.push(printer);
     }
 
+    // Create categories
+    const createdCategories = [];
+    for (const category of categories) {
+      const createdCategory = await prisma.category.create({
+        data: {
+          id: uuidv4(),
+          name: category.name,
+        },
+      });
+      createdCategories.push(createdCategory);
+    }
+
     // Create gigs
     const gigs = [];
     for (let i = 1; i <= 10; i++) {
@@ -82,10 +109,15 @@ async function seed() {
           duration: Math.floor(Math.random() * 5) + 1, // Random duration between 1 and 5
           price: Math.floor(Math.random() * 50) + 10, // Random price between $10 and $60
           imageUrl: `https://example.com/sample-gig-${i}.jpg`,
-          category: i % 2 === 0 ? "Apparel" : "Home Goods",
           tags: i % 2 === 0 ? ["custom", "design"] : ["home", "decor"],
           user_id: users[i % users.length].id, // Assign gigs to users in a round-robin fashion
           printers: [printers[i % printers.length].id], // Assign printers to gigs in a round-robin fashion
+          categories: {
+            connect: [
+              { id: createdCategories[i % createdCategories.length].id }, // Assign categories in a round-robin fashion
+              { id: createdCategories[(i + 1) % createdCategories.length].id }, // Assign a second category
+            ],
+          },
         },
       });
       gigs.push(gig);
